@@ -18,25 +18,25 @@ class _InfusionCalculatorScreenState extends State<InfusionCalculatorScreen> {
   final _volumeController = TextEditingController(text: '100');
   final _hoursController = TextEditingController(text: '3');
   final _minutesController = TextEditingController(text: '0');
-  final _actualDropsController = TextEditingController();
   final _calculator = const InfusionCalculator();
 
   int _dropFactor = 20;
   InfusionCalculationResult? _result;
-  InfusionComparison? _comparison;
 
   @override
   void dispose() {
     _volumeController.dispose();
     _hoursController.dispose();
     _minutesController.dispose();
-    _actualDropsController.dispose();
     super.dispose();
   }
 
   void _calculate() {
     FocusScope.of(context).unfocus();
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      if (_result != null) setState(() => _result = null);
+      return;
+    }
 
     try {
       final result = _calculator.calculate(
@@ -45,26 +45,11 @@ class _InfusionCalculatorScreenState extends State<InfusionCalculatorScreen> {
         minutes: int.parse(_minutesController.text),
         dropFactor: _dropFactor,
       );
-      setState(() {
-        _result = result;
-        _comparison = null;
-        _actualDropsController.clear();
-      });
+      setState(() => _result = result);
     } on Object catch (_) {
+      if (_result != null) setState(() => _result = null);
       _showMessage('입력값을 다시 확인해 주세요.');
     }
-  }
-
-  void _compare() {
-    FocusScope.of(context).unfocus();
-    final actual = double.tryParse(_actualDropsController.text);
-    if (actual == null || !actual.isFinite || actual < 0) {
-      _showMessage('1분간 관찰한 실제 방울 수를 입력해 주세요.');
-      return;
-    }
-    final result = _result;
-    if (result == null) return;
-    setState(() => _comparison = result.compareWith(actual));
   }
 
   void _showMessage(String message) {
@@ -105,11 +90,11 @@ class _InfusionCalculatorScreenState extends State<InfusionCalculatorScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    '수액 속도를 계산하고\n챔버를 비교하세요',
+                    '수액 속도를 계산하고\n점적 간격을 확인하세요',
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 10),
-                  const Text('처방 기준과 실제 챔버의 방울 수를 한 화면에서 확인할 수 있어요.'),
+                  const Text('계산된 간격에 맞춰 실제처럼 떨어지는 방울을 확인할 수 있어요.'),
                   const SizedBox(height: 24),
                   _Panel(
                     child: InfusionInputSection(
@@ -127,12 +112,7 @@ class _InfusionCalculatorScreenState extends State<InfusionCalculatorScreen> {
                   _Panel(
                     child: _result == null
                         ? const _EmptyResult()
-                        : CalculationResultSection(
-                            result: _result!,
-                            actualDropsController: _actualDropsController,
-                            comparison: _comparison,
-                            onCompare: _compare,
-                          ),
+                        : CalculationResultSection(result: _result!),
                   ),
                   const SizedBox(height: 18),
                   const _SafetyNotice(),

@@ -1,22 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../models/infusion_calculation_result.dart';
 import 'drip_chamber_visual.dart';
 
 class CalculationResultSection extends StatelessWidget {
-  const CalculationResultSection({
-    super.key,
-    required this.result,
-    required this.actualDropsController,
-    required this.onCompare,
-    this.comparison,
-  });
+  const CalculationResultSection({super.key, required this.result});
 
   final InfusionCalculationResult result;
-  final TextEditingController actualDropsController;
-  final VoidCallback onCompare;
-  final InfusionComparison? comparison;
 
   @override
   Widget build(BuildContext context) {
@@ -37,8 +27,9 @@ class CalculationResultSection extends StatelessWidget {
           children: [
             Expanded(
               child: _MetricCard(
-                label: '실제 조절 기준',
-                value: '약 ${result.roundedDropsPerMinute}방울/분',
+                label: '분당 점적 수',
+                value: '${result.gttPerMinute.toStringAsFixed(1)} gtt/min',
+                detail: '약 ${result.roundedDropsPerMinute}방울/분',
                 icon: Icons.water_drop_outlined,
               ),
             ),
@@ -47,6 +38,7 @@ class CalculationResultSection extends StatelessWidget {
               child: _MetricCard(
                 label: '한 방울 간격',
                 value: '${result.secondsPerDrop.toStringAsFixed(1)}초',
+                detail: '마다 1방울',
                 icon: Icons.timer_outlined,
               ),
             ),
@@ -55,45 +47,21 @@ class CalculationResultSection extends StatelessWidget {
         const SizedBox(height: 28),
         const Divider(),
         const SizedBox(height: 22),
-        Text('실제 챔버와 비교', style: Theme.of(context).textTheme.titleLarge),
+        Text('수액 점적 시각화', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 6),
-        const Text('챔버를 1분간 관찰한 뒤 실제 떨어진 방울 수를 입력하세요.'),
-        const SizedBox(height: 16),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: TextField(
-                key: const Key('actualDropsField'),
-                controller: actualDropsController,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  labelText: '1분간 실제 방울 수',
-                  suffixText: '방울',
-                ),
-                onSubmitted: (_) => onCompare(),
-              ),
-            ),
-            const SizedBox(width: 10),
-            SizedBox(
-              height: 57,
-              child: FilledButton.tonal(
-                key: const Key('compareButton'),
-                onPressed: onCompare,
-                child: const Text('비교'),
-              ),
-            ),
-          ],
-        ),
-        if (comparison != null) ...[
-          const SizedBox(height: 16),
-          _ComparisonBanner(comparison: comparison!),
-        ],
-        const SizedBox(height: 24),
-        DripChamberVisual(
-          secondsPerDrop: result.secondsPerDrop,
-          actualGttPerMinute: comparison?.actualGttPerMinute,
+        const Text('계산된 간격에 맞춰 방울이 반복해서 떨어집니다.'),
+        const SizedBox(height: 18),
+        AnimatedDripChamber(secondsPerDrop: result.secondsPerDrop),
+        const SizedBox(height: 14),
+        const Text(
+          '화면의 방울은 계산된 점적 간격을 시각화한 값입니다.\n'
+          '실제 투여 전 처방과 수액세트 정보를 다시 확인하세요.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Color(0xFF64788B),
+            fontSize: 12,
+            height: 1.45,
+          ),
         ),
       ],
     );
@@ -121,29 +89,33 @@ class _HeroRate extends StatelessWidget {
             style: TextStyle(color: Color(0xFFB9C9D8), fontSize: 14),
           ),
           const SizedBox(height: 6),
-          Text(
-            result.mlPerHour.toStringAsFixed(1),
-            key: const Key('mlPerHourValue'),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 40,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -1,
-            ),
-          ),
-          const Text(
-            'mL/hr',
-            style: TextStyle(
-              color: Color(0xFF64B5F6),
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            '계산값 ${result.gttPerMinute.toStringAsFixed(1)} gtt/min',
-            key: const Key('gttPerMinuteValue'),
-            style: const TextStyle(color: Colors.white),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                result.mlPerHour.toStringAsFixed(1),
+                key: const Key('mlPerHourValue'),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 40,
+                  height: 1,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -1,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 3),
+                child: Text(
+                  'mL/hr',
+                  style: TextStyle(
+                    color: Color(0xFF64B5F6),
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -155,11 +127,13 @@ class _MetricCard extends StatelessWidget {
   const _MetricCard({
     required this.label,
     required this.value,
+    required this.detail,
     required this.icon,
   });
 
   final String label;
   final String value;
+  final String detail;
   final IconData icon;
 
   @override
@@ -183,69 +157,9 @@ class _MetricCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(value, style: Theme.of(context).textTheme.titleMedium),
           ),
+          const SizedBox(height: 2),
+          Text(detail, style: Theme.of(context).textTheme.bodySmall),
         ],
-      ),
-    );
-  }
-}
-
-class _ComparisonBanner extends StatelessWidget {
-  const _ComparisonBanner({required this.comparison});
-
-  final InfusionComparison comparison;
-
-  @override
-  Widget build(BuildContext context) {
-    final (color, icon, title, message) = switch (comparison.pace) {
-      InfusionPace.tooSlow => (
-        const Color(0xFFD97706),
-        Icons.south_rounded,
-        '목표보다 느려요',
-        '목표보다 ${comparison.differencePercent.abs().toStringAsFixed(0)}% 적게 떨어지고 있어요.',
-      ),
-      InfusionPace.onTarget => (
-        const Color(0xFF16836E),
-        Icons.check_circle_outline,
-        '적정 범위예요',
-        '계산 목표와 ±10% 이내로 일치해요.',
-      ),
-      InfusionPace.tooFast => (
-        const Color(0xFFC2413B),
-        Icons.north_rounded,
-        '목표보다 빨라요',
-        '목표보다 ${comparison.differencePercent.abs().toStringAsFixed(0)}% 많이 떨어지고 있어요.',
-      ),
-    };
-    return Semantics(
-      liveRegion: true,
-      child: Container(
-        key: const Key('comparisonBanner'),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.09),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withValues(alpha: 0.32)),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(color: color, fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(message),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

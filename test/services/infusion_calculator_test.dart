@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nursemate/models/infusion_calculation_result.dart';
 import 'package:nursemate/services/infusion_calculator.dart';
 
 void main() {
@@ -83,17 +82,6 @@ void main() {
       expect(result.roundedDropsPerMinute, 11);
       expect(result.secondsPerDrop, closeTo(5.4, 1e-9));
       expect(result.secondsPerDrop, isNot(closeTo(60 / 11, 1e-9)));
-    });
-
-    test('실제 챔버와 목표 속도를 비교한다', () {
-      const result = InfusionCalculationResult(
-        mlPerHour: 100,
-        gttPerMinute: 20,
-        secondsPerDrop: 3,
-      );
-      expect(result.compareWith(17).pace, InfusionPace.tooSlow);
-      expect(result.compareWith(19).pace, InfusionPace.onTarget);
-      expect(result.compareWith(23).pace, InfusionPace.tooFast);
     });
 
     test('잘못된 입력을 거부한다', () {
