@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'config/app_access_config.dart';
 import 'screens/app_lock_screen.dart';
-import 'screens/infusion_calculator_screen.dart';
+import 'screens/main_menu_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -105,7 +105,7 @@ class _NurseMateAppState extends State<NurseMateApp> {
         ),
       ),
       home: _isUnlocked
-          ? const InfusionCalculatorScreen()
+          ? const MainMenuScreen()
           : AppLockScreen(onUnlocked: _unlock),
     );
   }

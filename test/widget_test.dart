@@ -5,7 +5,7 @@ import 'package:nursemate/widgets/drip_chamber_visual.dart';
 
 void main() {
   testWidgets('계산 전에는 두 입력만 표시하고 애니메이션은 표시하지 않는다', (tester) async {
-    await tester.pumpWidget(const NurseMateApp(initiallyUnlocked: true));
+    await _openCalculator(tester);
 
     expect(find.byKey(const Key('volumeField')), findsOneWidget);
     expect(find.byKey(const Key('hoursField')), findsOneWidget);
@@ -15,7 +15,7 @@ void main() {
   });
 
   testWidgets('기본값 100mL와 3hr를 20 gtt/mL 기준으로 계산한다', (tester) async {
-    await tester.pumpWidget(const NurseMateApp(initiallyUnlocked: true));
+    await _openCalculator(tester);
     await _calculate(tester);
 
     expect(find.text('33.33'), findsOneWidget);
@@ -31,7 +31,7 @@ void main() {
   });
 
   testWidgets('100mL와 4hr 결과 및 원본 7.2초를 애니메이션에 전달한다', (tester) async {
-    await tester.pumpWidget(const NurseMateApp(initiallyUnlocked: true));
+    await _openCalculator(tester);
     await tester.enterText(find.byKey(const Key('hoursField')), '4');
     await _calculate(tester);
 
@@ -42,7 +42,7 @@ void main() {
   });
 
   testWidgets('소수 시간 1.5hr를 허용하고 원본 2.7초를 전달한다', (tester) async {
-    await tester.pumpWidget(const NurseMateApp(initiallyUnlocked: true));
+    await _openCalculator(tester);
     await tester.enterText(find.byKey(const Key('hoursField')), '1.5');
     await _calculate(tester);
 
@@ -52,7 +52,7 @@ void main() {
   });
 
   testWidgets('빈 값, 문자열, 0, 음수 입력에 오류를 표시하고 계산하지 않는다', (tester) async {
-    await tester.pumpWidget(const NurseMateApp(initiallyUnlocked: true));
+    await _openCalculator(tester);
 
     await tester.enterText(find.byKey(const Key('volumeField')), '');
     await tester.enterText(find.byKey(const Key('hoursField')), '');
@@ -81,7 +81,7 @@ void main() {
   });
 
   testWidgets('계산 후 입력이 잘못되면 기존 애니메이션을 제거한다', (tester) async {
-    await tester.pumpWidget(const NurseMateApp(initiallyUnlocked: true));
+    await _openCalculator(tester);
     await _calculate(tester);
     expect(find.byType(AnimatedDripChamber), findsOneWidget);
 
@@ -90,6 +90,12 @@ void main() {
 
     expect(find.byType(AnimatedDripChamber), findsNothing);
   });
+}
+
+Future<void> _openCalculator(WidgetTester tester) async {
+  await tester.pumpWidget(const NurseMateApp(initiallyUnlocked: true));
+  await tester.tap(find.byKey(const Key('infusionCalculatorMenu')));
+  await tester.pumpAndSettle();
 }
 
 Future<void> _calculate(WidgetTester tester) async {

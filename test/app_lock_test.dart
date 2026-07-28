@@ -41,7 +41,7 @@ void main() {
     expect(find.byKey(const Key('calculateButton')), findsNothing);
   });
 
-  testWidgets('올바른 비밀번호로 계산 화면을 연다', (tester) async {
+  testWidgets('올바른 비밀번호로 메인 메뉴를 연다', (tester) async {
     await pumpApp(tester);
 
     await tester.enterText(
@@ -52,12 +52,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('passwordField')), findsNothing);
-    expect(find.byKey(const Key('calculateButton')), findsOneWidget);
+    expect(find.byKey(const Key('infusionCalculatorMenu')), findsOneWidget);
+    expect(find.byKey(const Key('infusionSpeedCheckMenu')), findsOneWidget);
     final preferences = await SharedPreferences.getInstance();
     expect(preferences.getBool(nurseMateUnlockedKey), isTrue);
   });
 
-  testWidgets('잠금 해제 후 앱을 새로 시작하면 계산 화면을 바로 연다', (tester) async {
+  testWidgets('잠금 해제 후 앱을 새로 시작하면 메인 메뉴를 바로 연다', (tester) async {
     await pumpApp(tester);
     await tester.enterText(
       find.byKey(const Key('passwordField')),
@@ -65,19 +66,19 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('unlockButton')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('calculateButton')), findsOneWidget);
+    expect(find.byKey(const Key('infusionCalculatorMenu')), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await pumpApp(tester);
 
     expect(find.byKey(const Key('passwordField')), findsNothing);
-    expect(find.byKey(const Key('calculateButton')), findsOneWidget);
+    expect(find.byKey(const Key('infusionCalculatorMenu')), findsOneWidget);
   });
 
   testWidgets('저장 데이터가 삭제되면 잠금 화면을 다시 표시한다', (tester) async {
     SharedPreferences.setMockInitialValues({nurseMateUnlockedKey: true});
     await pumpApp(tester);
-    expect(find.byKey(const Key('calculateButton')), findsOneWidget);
+    expect(find.byKey(const Key('infusionCalculatorMenu')), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
     SharedPreferences.setMockInitialValues({});
