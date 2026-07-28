@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../controllers/highlighting_text_editing_controller.dart';
+import '../design_system/nursemate_tokens.dart';
 import '../models/memo.dart';
 import '../repositories/memo_repository.dart';
 
@@ -55,6 +56,9 @@ class _MemoEditorScreenState extends State<MemoEditorScreen> {
   late final TextEditingController _titleController;
   late final HighlightingTextEditingController _contentController;
   late final List<MemoPhoto> _photos;
+  Color _selectedHighlightColor =
+      HighlightingTextEditingController.highlightColor;
+  late bool _isFavorite;
   bool _isSaving = false;
   bool _isPickingPhoto = false;
 
@@ -69,6 +73,7 @@ class _MemoEditorScreenState extends State<MemoEditorScreen> {
       highlights: widget.memo?.highlights ?? const [],
     );
     _photos = [...?widget.memo?.photos];
+    _isFavorite = widget.memo?.isFavorite ?? false;
   }
 
   @override
@@ -92,6 +97,7 @@ class _MemoEditorScreenState extends State<MemoEditorScreen> {
       updatedAt: now,
       highlights: _contentController.highlights,
       photos: [..._photos],
+      isFavorite: _isFavorite,
     );
     await widget.repository.save(memo);
     if (!mounted) return;
@@ -120,7 +126,9 @@ class _MemoEditorScreenState extends State<MemoEditorScreen> {
   }
 
   void _applyHighlight() {
-    final didApply = _contentController.highlightSelection();
+    final didApply = _contentController.highlightSelection(
+      color: _selectedHighlightColor,
+    );
     if (!didApply) {
       ScaffoldMessenger.of(
         context,
@@ -179,6 +187,21 @@ class _MemoEditorScreenState extends State<MemoEditorScreen> {
           ),
         ),
         actions: [
+          IconButton(
+            key: const Key('toggleMemoFavoriteButton'),
+            tooltip: _isFavorite ? '즐겨찾기 해제' : '즐겨찾기',
+            onPressed: () => setState(() => _isFavorite = !_isFavorite),
+            icon: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: Icon(
+                _isFavorite ? Icons.star_rounded : Icons.star_outline_rounded,
+                key: ValueKey(_isFavorite),
+                color: _isFavorite
+                    ? NurseMateColors.orange
+                    : NurseMateColors.textSecondary,
+              ),
+            ),
+          ),
           if (_isEditing)
             IconButton(
               key: const Key('deleteMemoButton'),
@@ -217,9 +240,13 @@ class _MemoEditorScreenState extends State<MemoEditorScreen> {
                 const SizedBox(height: 14),
                 _MemoToolbar(
                   isPickingPhoto: _isPickingPhoto,
+                  selectedHighlightColor: _selectedHighlightColor,
                   onAddPhoto: _addPhoto,
                   onApplyHighlight: _applyHighlight,
                   onClearHighlight: _clearHighlight,
+                  onHighlightColorChanged: (color) {
+                    setState(() => _selectedHighlightColor = color);
+                  },
                 ),
                 const SizedBox(height: 10),
                 TextField(
@@ -235,9 +262,7 @@ class _MemoEditorScreenState extends State<MemoEditorScreen> {
                 ),
                 if (_photos.isNotEmpty) ...[
                   const SizedBox(height: 20),
-                  Text('첨부 사진', style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 10),
-                  _PhotoGallery(
+                  _MemoBodyImages(
                     photos: _photos,
                     onRemove: (photo) {
                       setState(() => _photos.remove(photo));
@@ -256,15 +281,19 @@ class _MemoEditorScreenState extends State<MemoEditorScreen> {
 class _MemoToolbar extends StatelessWidget {
   const _MemoToolbar({
     required this.isPickingPhoto,
+    required this.selectedHighlightColor,
     required this.onAddPhoto,
     required this.onApplyHighlight,
     required this.onClearHighlight,
+    required this.onHighlightColorChanged,
   });
 
   final bool isPickingPhoto;
+  final Color selectedHighlightColor;
   final VoidCallback onAddPhoto;
   final VoidCallback onApplyHighlight;
   final VoidCallback onClearHighlight;
+  final ValueChanged<Color> onHighlightColorChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -281,7 +310,11 @@ class _MemoToolbar extends StatelessWidget {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.add_photo_alternate_outlined),
-          label: const Text('사진 추가'),
+          label: const Text('본문에 사진 넣기'),
+        ),
+        _HighlightColorPicker(
+          selectedColor: selectedHighlightColor,
+          onChanged: onHighlightColorChanged,
         ),
         FilledButton.tonalIcon(
           key: const Key('applyMemoHighlightButton'),
@@ -300,54 +333,168 @@ class _MemoToolbar extends StatelessWidget {
   }
 }
 
-class _PhotoGallery extends StatelessWidget {
-  const _PhotoGallery({required this.photos, required this.onRemove});
+class _HighlightColorPicker extends StatelessWidget {
+  const _HighlightColorPicker({
+    required this.selectedColor,
+    required this.onChanged,
+  });
+
+  static const _labels = ['노랑', '민트', '분홍', '파랑', '보라'];
+
+  final Color selectedColor;
+  final ValueChanged<Color> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const Key('memoHighlightColorPicker'),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: NurseMateColors.surface,
+        borderRadius: BorderRadius.circular(NurseMateRadii.input),
+        border: Border.all(color: NurseMateColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (
+            var index = 0;
+            index < HighlightingTextEditingController.highlightColors.length;
+            index++
+          ) ...[
+            if (index > 0) const SizedBox(width: 5),
+            _HighlightColorButton(
+              color: HighlightingTextEditingController.highlightColors[index],
+              label: _labels[index],
+              isSelected:
+                  selectedColor.toARGB32() ==
+                  HighlightingTextEditingController.highlightColors[index]
+                      .toARGB32(),
+              onTap: () => onChanged(
+                HighlightingTextEditingController.highlightColors[index],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _HighlightColorButton extends StatelessWidget {
+  const _HighlightColorButton({
+    required this.color,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final Color color;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: '$label 형광펜',
+      child: Tooltip(
+        message: '$label 형광펜',
+        child: InkWell(
+          key: Key('memoHighlightColor_$label'),
+          onTap: onTap,
+          customBorder: const CircleBorder(),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            width: 30,
+            height: 30,
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isSelected
+                  ? NurseMateColors.primarySoft
+                  : Colors.transparent,
+              border: Border.all(
+                color: isSelected
+                    ? NurseMateColors.primary
+                    : Colors.transparent,
+                width: 1.5,
+              ),
+            ),
+            child: DecoratedBox(
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              child: isSelected
+                  ? const Icon(
+                      Icons.check_rounded,
+                      size: 16,
+                      color: NurseMateColors.navy,
+                    )
+                  : null,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MemoBodyImages extends StatelessWidget {
+  const _MemoBodyImages({required this.photos, required this.onRemove});
 
   final List<MemoPhoto> photos;
   final ValueChanged<MemoPhoto> onRemove;
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (final photo in photos)
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: Image.memory(
-                  photo.bytes,
-                  key: Key('memoPhoto_${photo.id}'),
-                  width: 150,
-                  height: 150,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const SizedBox(
-                    width: 150,
-                    height: 150,
-                    child: ColoredBox(
-                      color: Color(0xFFF0F3F7),
-                      child: Icon(Icons.broken_image_outlined),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: Stack(
+              children: [
+                Container(
+                  width: double.infinity,
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    color: NurseMateColors.surfaceMuted,
+                    borderRadius: BorderRadius.circular(NurseMateRadii.input),
+                    border: Border.all(color: NurseMateColors.border),
+                  ),
+                  child: Image.memory(
+                    photo.bytes,
+                    key: Key('memoPhoto_${photo.id}'),
+                    width: double.infinity,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, _, _) => const AspectRatio(
+                      aspectRatio: 16 / 9,
+                      child: ColoredBox(
+                        color: NurseMateColors.surfaceMuted,
+                        child: Icon(Icons.broken_image_outlined),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Positioned(
-                top: 6,
-                right: 6,
-                child: IconButton.filled(
-                  key: Key('removeMemoPhoto_${photo.id}'),
-                  tooltip: '사진 삭제',
-                  onPressed: () => onRemove(photo),
-                  icon: const Icon(Icons.close_rounded, size: 18),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.black54,
-                    foregroundColor: Colors.white,
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: IconButton.filled(
+                    key: Key('removeMemoPhoto_${photo.id}'),
+                    tooltip: '사진 삭제',
+                    onPressed: () => onRemove(photo),
+                    icon: const Icon(Icons.close_rounded, size: 18),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black54,
+                      foregroundColor: Colors.white,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
       ],
     );

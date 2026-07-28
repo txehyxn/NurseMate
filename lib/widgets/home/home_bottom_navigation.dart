@@ -20,60 +20,66 @@ class HomeBottomNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       top: false,
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: Color(0xFFF0EFF6))),
-          boxShadow: [
-            BoxShadow(
-              color: Color(0x125D4DB2),
-              blurRadius: 22,
-              offset: Offset(0, -5),
-            ),
-          ],
-        ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _BottomItem(
-                    icon: Icons.home_rounded,
-                    label: '홈',
-                    selected: true,
-                    onTap: onHome,
+      child: SizedBox(
+        key: const Key('homeBottomNavigation'),
+        height: 76,
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(top: BorderSide(color: Color(0xFFF0EFF6))),
+            boxShadow: [
+              BoxShadow(
+                color: Color(0x125D4DB2),
+                blurRadius: 22,
+                offset: Offset(0, -5),
+              ),
+            ],
+          ),
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 760),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _BottomItem(
+                      icon: Icons.home_rounded,
+                      label: '홈',
+                      selected: true,
+                      onTap: onHome,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: _BottomItem(
-                    icon: Icons.calculate_outlined,
-                    label: '계산',
-                    onTap: onCalculation,
+                  Expanded(
+                    child: _BottomItem(
+                      icon: Icons.calculate_outlined,
+                      label: '계산',
+                      onTap: onCalculation,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: _BottomItem(
-                    icon: Icons.assignment_outlined,
-                    label: '기록',
-                    onTap: onRecords,
+                  Expanded(
+                    child: _BottomItem(
+                      icon: Icons.assignment_outlined,
+                      label: '기록',
+                      onTap: onRecords,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: _BottomItem(
-                    icon: Icons.auto_stories_outlined,
-                    label: '지식',
-                    onTap: onKnowledge,
+                  Expanded(
+                    child: _BottomItem(
+                      icon: Icons.auto_stories_outlined,
+                      label: '지식',
+                      onTap: onKnowledge,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: _BottomItem(
-                    icon: Icons.person_outline_rounded,
-                    label: '마이',
-                    onTap: onProfile,
+                  Expanded(
+                    child: _BottomItem(
+                      icon: Icons.person_outline_rounded,
+                      label: '마이',
+                      onTap: onProfile,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -101,9 +107,9 @@ class _BottomItem extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 9),
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 5),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 7),
+          padding: const EdgeInsets.symmetric(vertical: 5),
           decoration: BoxDecoration(
             color: selected ? const Color(0xFFF2EFFF) : Colors.transparent,
             borderRadius: BorderRadius.circular(18),
@@ -111,8 +117,8 @@ class _BottomItem extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: color, size: 25),
-              const SizedBox(height: 3),
+              Icon(icon, color: color, size: 24),
+              const SizedBox(height: 2),
               Text(
                 label,
                 style: TextStyle(

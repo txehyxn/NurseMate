@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../design_system/nursemate_tokens.dart';
 import '../models/memo.dart';
 import '../repositories/memo_repository.dart';
 import '../widgets/highlighted_memo_text.dart';
@@ -19,13 +20,15 @@ class _MemoListScreenState extends State<MemoListScreen> {
   MemoRepository? _repository;
   List<Memo> _memos = const [];
   String _query = '';
+  bool _showFavoritesOnly = false;
   bool _isLoading = true;
   Object? _loadError;
 
   List<Memo> get _filteredMemos {
     final query = _query.trim().toLowerCase();
-    if (query.isEmpty) return _memos;
     return _memos.where((memo) {
+      if (_showFavoritesOnly && !memo.isFavorite) return false;
+      if (query.isEmpty) return true;
       return memo.title.toLowerCase().contains(query) ||
           memo.content.toLowerCase().contains(query);
     }).toList();
@@ -79,6 +82,13 @@ class _MemoListScreenState extends State<MemoListScreen> {
     }
   }
 
+  Future<void> _toggleFavorite(Memo memo) async {
+    final repository = _repository;
+    if (repository == null) return;
+    await repository.save(memo.copyWith(isFavorite: !memo.isFavorite));
+    await _loadMemos();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -110,6 +120,16 @@ class _MemoListScreenState extends State<MemoListScreen> {
               padding: const EdgeInsets.fromLTRB(18, 18, 18, 24),
               child: Column(
                 children: [
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: _FavoriteFilterButton(
+                      isSelected: _showFavoritesOnly,
+                      onTap: () => setState(
+                        () => _showFavoritesOnly = !_showFavoritesOnly,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   SearchBar(
                     key: const Key('memoSearchBar'),
                     hintText: '메모 검색',
@@ -154,17 +174,26 @@ class _MemoListScreenState extends State<MemoListScreen> {
       itemCount: memos.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
-        return _MemoCard(memo: memos[index], onTap: _openEditor);
+        return _MemoCard(
+          memo: memos[index],
+          onTap: _openEditor,
+          onFavoriteToggle: _toggleFavorite,
+        );
       },
     );
   }
 }
 
 class _MemoCard extends StatelessWidget {
-  const _MemoCard({required this.memo, required this.onTap});
+  const _MemoCard({
+    required this.memo,
+    required this.onTap,
+    required this.onFavoriteToggle,
+  });
 
   final Memo memo;
   final ValueChanged<Memo> onTap;
+  final ValueChanged<Memo> onFavoriteToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -188,11 +217,30 @@ class _MemoCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      memo.title.isEmpty ? '제목 없음' : memo.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            memo.title.isEmpty ? '제목 없음' : memo.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                        IconButton(
+                          key: Key('memoFavorite_${memo.id}'),
+                          tooltip: memo.isFavorite ? '즐겨찾기 해제' : '즐겨찾기',
+                          onPressed: () => onFavoriteToggle(memo),
+                          icon: Icon(
+                            memo.isFavorite
+                                ? Icons.star_rounded
+                                : Icons.star_outline_rounded,
+                            color: memo.isFavorite
+                                ? NurseMateColors.orange
+                                : NurseMateColors.textTertiary,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 7),
                     HighlightedMemoText(
@@ -233,6 +281,63 @@ class _MemoCard extends StatelessWidget {
                   ),
                 ),
               ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FavoriteFilterButton extends StatelessWidget {
+  const _FavoriteFilterButton({required this.isSelected, required this.onTap});
+
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        key: const Key('favoriteMemoFilterButton'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(NurseMateRadii.button),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? NurseMateColors.primarySoft
+                : NurseMateColors.surface,
+            borderRadius: BorderRadius.circular(NurseMateRadii.button),
+            border: Border.all(
+              color: isSelected
+                  ? NurseMateColors.primary.withValues(alpha: 0.35)
+                  : NurseMateColors.border,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isSelected ? Icons.star_rounded : Icons.star_outline_rounded,
+                size: 19,
+                color: isSelected
+                    ? NurseMateColors.primary
+                    : NurseMateColors.textSecondary,
+              ),
+              const SizedBox(width: 7),
+              Text(
+                '즐겨찾기만 보기',
+                style: TextStyle(
+                  color: isSelected
+                      ? NurseMateColors.primary
+                      : NurseMateColors.text,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
         ),

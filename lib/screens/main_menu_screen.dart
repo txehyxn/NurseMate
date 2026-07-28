@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/link.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../models/duty_type.dart';
+import '../repositories/duty_repository.dart';
 import '../repositories/memo_repository.dart';
 import '../widgets/home/duty_calendar_card.dart';
 import '../widgets/home/home_bottom_navigation.dart';
@@ -10,6 +12,7 @@ import '../widgets/home/home_header.dart';
 import '../widgets/home/home_illustration.dart';
 import '../widgets/home/home_quick_sections.dart';
 import 'coming_soon_screen.dart';
+import 'duty_manage_screen.dart';
 import 'infusion_calculator_screen.dart';
 import 'infusion_speed_check_screen.dart';
 import 'memo_list_screen.dart';
@@ -18,22 +21,84 @@ final Uri kKpicDrugSearchUri = Uri.parse(
   'https://health.kr/searchDrug/search_detail.asp',
 );
 
-class MainMenuScreen extends StatelessWidget {
-  const MainMenuScreen({super.key, this.memoRepository});
+class MainMenuScreen extends StatefulWidget {
+  const MainMenuScreen({
+    super.key,
+    this.memoRepository,
+    this.dutyRepository,
+    this.initialDutyMonth,
+    this.dutyToday,
+  });
 
   final MemoRepository? memoRepository;
+  final DutyRepository? dutyRepository;
+  final DateTime? initialDutyMonth;
+  final DateTime? dutyToday;
 
-  void _open(BuildContext context, Widget screen) {
+  @override
+  State<MainMenuScreen> createState() => _MainMenuScreenState();
+}
+
+class _MainMenuScreenState extends State<MainMenuScreen> {
+  DutyRepository? _dutyRepository;
+  late DateTime _dutyMonth;
+  Map<String, DutyType> _duties = const {};
+
+  @override
+  void initState() {
+    super.initState();
+    final initialMonth = widget.initialDutyMonth ?? DateTime.now();
+    _dutyMonth = DateTime(initialMonth.year, initialMonth.month);
+    _initializeDuties();
+  }
+
+  Future<void> _initializeDuties() async {
+    _dutyRepository = widget.dutyRepository ?? await HiveDutyRepository.open();
+    await _loadDuties();
+  }
+
+  Future<void> _loadDuties() async {
+    final repository = _dutyRepository;
+    if (repository == null) return;
+    final duties = await repository.getForMonth(_dutyMonth);
+    if (!mounted) return;
+    setState(() => _duties = duties);
+  }
+
+  Future<void> _moveDutyMonth(int offset) async {
+    setState(() {
+      _dutyMonth = DateTime(_dutyMonth.year, _dutyMonth.month + offset);
+      _duties = const {};
+    });
+    await _loadDuties();
+  }
+
+  Future<void> _openDutyManager() async {
+    final repository = _dutyRepository;
+    if (repository == null) return;
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => DutyManageScreen(
+          repository: repository,
+          initialMonth: _dutyMonth,
+          today: widget.dutyToday,
+        ),
+      ),
+    );
+    await _loadDuties();
+  }
+
+  void _open(Widget screen) {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
   }
 
-  void _comingSoon(BuildContext context, String title, IconData icon) {
-    _open(context, ComingSoonScreen(title: title, icon: icon));
+  void _comingSoon(String title, IconData icon) {
+    _open(ComingSoonScreen(title: title, icon: icon));
   }
 
-  Future<void> _openDrugSearch(BuildContext context) async {
+  Future<void> _openDrugSearch() async {
     if (!await launchUrl(kKpicDrugSearchUri, webOnlyWindowName: '_self') &&
-        context.mounted) {
+        mounted) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('약학정보원 페이지를 열지 못했습니다.')));
@@ -46,12 +111,11 @@ class MainMenuScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFFBFAFE),
       bottomNavigationBar: HomeBottomNavigation(
         onHome: () {},
-        onCalculation: () => _open(context, const InfusionCalculatorScreen()),
+        onCalculation: () => _open(const InfusionCalculatorScreen()),
         onRecords: () =>
-            _open(context, MemoListScreen(repository: memoRepository)),
-        onKnowledge: () => _openDrugSearch(context),
-        onProfile: () =>
-            _comingSoon(context, '마이', Icons.person_outline_rounded),
+            _open(MemoListScreen(repository: widget.memoRepository)),
+        onKnowledge: _openDrugSearch,
+        onProfile: () => _comingSoon('마이', Icons.person_outline_rounded),
       ),
       body: SafeArea(
         bottom: false,
@@ -66,27 +130,22 @@ class MainMenuScreen extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: HomeHeader(
-                      onNotifications: () => _comingSoon(
-                        context,
-                        '알림',
-                        Icons.notifications_none_rounded,
-                      ),
-                      onProfile: () => _comingSoon(
-                        context,
-                        '마이',
-                        Icons.person_outline_rounded,
-                      ),
+                      onNotifications: () =>
+                          _comingSoon('알림', Icons.notifications_none_rounded),
+                      onProfile: () =>
+                          _comingSoon('마이', Icons.person_outline_rounded),
                     ),
                   ),
                   const SizedBox(height: 28),
                   DutyCalendarCard(
-                    onManage: () => _comingSoon(
-                      context,
-                      '내 듀티 관리',
-                      Icons.calendar_month_rounded,
-                    ),
+                    month: _dutyMonth,
+                    duties: _duties,
+                    today: widget.dutyToday,
+                    onPreviousMonth: () => _moveDutyMonth(-1),
+                    onNextMonth: () => _moveDutyMonth(1),
+                    onManage: _openDutyManager,
                     onSettings: () =>
-                        _comingSoon(context, '듀티 설정', Icons.settings_outlined),
+                        _comingSoon('듀티 설정', Icons.settings_outlined),
                   ),
                   const SizedBox(height: 30),
                   const _SectionHeading(
@@ -95,10 +154,9 @@ class MainMenuScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 18),
                   _FeatureGrid(
-                    memoRepository: memoRepository,
-                    onOpen: (screen) => _open(context, screen),
-                    onComingSoon: (title, icon) =>
-                        _comingSoon(context, title, icon),
+                    memoRepository: widget.memoRepository,
+                    onOpen: _open,
+                    onComingSoon: _comingSoon,
                   ),
                   const SizedBox(height: 26),
                   LayoutBuilder(
@@ -107,42 +165,30 @@ class MainMenuScreen extends StatelessWidget {
                         return SizedBox(
                           height: 230,
                           child: HomeQuickSectionsWide(
-                            onDropCalculation: () => _open(
-                              context,
-                              const InfusionSpeedCheckScreen(),
-                            ),
-                            onCcPerHour: () => _open(
-                              context,
-                              const InfusionCalculatorScreen(),
-                            ),
+                            onDropCalculation: () =>
+                                _open(const InfusionSpeedCheckScreen()),
+                            onCcPerHour: () =>
+                                _open(const InfusionCalculatorScreen()),
                             onBmi: () => _comingSoon(
-                              context,
                               'BMI 계산',
                               Icons.monitor_weight_outlined,
                             ),
-                            onOther: () => _comingSoon(
-                              context,
-                              '기타 계산',
-                              Icons.grid_view_rounded,
-                            ),
+                            onOther: () =>
+                                _comingSoon('기타 계산', Icons.grid_view_rounded),
                           ),
                         );
                       }
                       return HomeQuickSections(
                         onDropCalculation: () =>
-                            _open(context, const InfusionSpeedCheckScreen()),
+                            _open(const InfusionSpeedCheckScreen()),
                         onCcPerHour: () =>
-                            _open(context, const InfusionCalculatorScreen()),
+                            _open(const InfusionCalculatorScreen()),
                         onBmi: () => _comingSoon(
-                          context,
                           'BMI 계산',
                           Icons.monitor_weight_outlined,
                         ),
-                        onOther: () => _comingSoon(
-                          context,
-                          '기타 계산',
-                          Icons.grid_view_rounded,
-                        ),
+                        onOther: () =>
+                            _comingSoon('기타 계산', Icons.grid_view_rounded),
                       );
                     },
                   ),
@@ -249,8 +295,8 @@ class _FeatureGrid extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final columns = constraints.maxWidth >= 760 ? 3 : 2;
-        final ratio = columns == 3 ? 0.88 : 0.72;
+        final columns = constraints.maxWidth >= 350 ? 3 : 2;
+        final ratio = constraints.maxWidth >= 760 ? 0.88 : 0.70;
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),

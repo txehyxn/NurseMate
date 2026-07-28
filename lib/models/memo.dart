@@ -10,6 +10,7 @@ class Memo {
     required this.updatedAt,
     this.highlights = const [],
     this.photos = const [],
+    this.isFavorite = false,
   });
 
   final String id;
@@ -19,6 +20,7 @@ class Memo {
   final DateTime updatedAt;
   final List<MemoHighlight> highlights;
   final List<MemoPhoto> photos;
+  final bool isFavorite;
 
   Map<String, Object> toJson() {
     return {
@@ -29,6 +31,7 @@ class Memo {
       'updatedAt': updatedAt.toIso8601String(),
       'highlights': highlights.map((highlight) => highlight.toJson()).toList(),
       'photos': photos.map((photo) => photo.toJson()).toList(),
+      'isFavorite': isFavorite,
     };
   }
 
@@ -48,36 +51,72 @@ class Memo {
       updatedAt: DateTime.parse(json['updatedAt']! as String),
       highlights: highlights,
       photos: photos,
+      isFavorite: (json['isFavorite'] as bool?) ?? false,
+    );
+  }
+
+  Memo copyWith({
+    String? title,
+    String? content,
+    DateTime? updatedAt,
+    List<MemoHighlight>? highlights,
+    List<MemoPhoto>? photos,
+    bool? isFavorite,
+  }) {
+    return Memo(
+      id: id,
+      title: title ?? this.title,
+      content: content ?? this.content,
+      createdAt: createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      highlights: highlights ?? this.highlights,
+      photos: photos ?? this.photos,
+      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 }
 
 class MemoHighlight {
-  const MemoHighlight({required this.start, required this.end});
+  const MemoHighlight({
+    required this.start,
+    required this.end,
+    this.colorValue = defaultColorValue,
+  });
+
+  static const int defaultColorValue = 0xFFFFF59D;
 
   final int start;
   final int end;
+  final int colorValue;
 
   bool isValidFor(String text) {
     return start >= 0 && end > start && end <= text.length;
   }
 
-  Map<String, Object> toJson() => {'start': start, 'end': end};
+  Map<String, Object> toJson() => {
+    'start': start,
+    'end': end,
+    'colorValue': colorValue,
+  };
 
   factory MemoHighlight.fromJson(Map<String, Object?> json) {
     return MemoHighlight(
       start: (json['start'] as num).toInt(),
       end: (json['end'] as num).toInt(),
+      colorValue: (json['colorValue'] as num?)?.toInt() ?? defaultColorValue,
     );
   }
 
   @override
   bool operator ==(Object other) {
-    return other is MemoHighlight && other.start == start && other.end == end;
+    return other is MemoHighlight &&
+        other.start == start &&
+        other.end == end &&
+        other.colorValue == colorValue;
   }
 
   @override
-  int get hashCode => Object.hash(start, end);
+  int get hashCode => Object.hash(start, end, colorValue);
 }
 
 class MemoPhoto {

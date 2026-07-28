@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../controllers/highlighting_text_editing_controller.dart';
 import '../models/memo.dart';
 
 class HighlightedMemoText extends StatelessWidget {
@@ -36,9 +35,7 @@ class HighlightedMemoText extends StatelessWidget {
         spans.add(
           TextSpan(
             text: text.substring(start, highlight.end),
-            style: const TextStyle(
-              backgroundColor: HighlightingTextEditingController.highlightColor,
-            ),
+            style: TextStyle(backgroundColor: Color(highlight.colorValue)),
           ),
         );
       }

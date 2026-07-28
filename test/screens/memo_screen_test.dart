@@ -174,6 +174,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('memoPhoto_photo-1')), findsOneWidget);
+    final insertedPhoto = tester.widget<Image>(
+      find.byKey(const Key('memoPhoto_photo-1')),
+    );
+    expect(insertedPhoto.fit, BoxFit.contain);
+    expect(insertedPhoto.width, double.infinity);
 
     await tester.tap(find.byKey(const Key('saveMemoButton')));
     await tester.pumpAndSettle();
@@ -233,6 +238,76 @@ void main() {
     ]);
   });
 
+  testWidgets('본문의 서로 다른 범위에 여러 형광펜 색상을 적용한다', (tester) async {
+    final repository = _MemoryMemoRepository();
+    await _pumpMemoList(tester, repository);
+
+    await tester.tap(find.byKey(const Key('addMemoButton')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('memoContentField')),
+      '투약 전 확인 투약 후 관찰',
+    );
+
+    final field = tester.widget<TextField>(
+      find.byKey(const Key('memoContentField')),
+    );
+    final controller = field.controller! as HighlightingTextEditingController;
+
+    controller.selection = const TextSelection(baseOffset: 0, extentOffset: 7);
+    await tester.tap(find.byKey(const Key('memoHighlightColor_민트')));
+    await tester.tap(find.byKey(const Key('applyMemoHighlightButton')));
+    await tester.pump();
+
+    controller.selection = const TextSelection(baseOffset: 8, extentOffset: 15);
+    await tester.tap(find.byKey(const Key('memoHighlightColor_분홍')));
+    await tester.tap(find.byKey(const Key('applyMemoHighlightButton')));
+    await tester.pump();
+
+    expect(controller.highlights, [
+      const MemoHighlight(start: 0, end: 7, colorValue: 0xFFB9F6D2),
+      const MemoHighlight(start: 8, end: 15, colorValue: 0xFFFFC4D6),
+    ]);
+
+    await tester.tap(find.byKey(const Key('saveMemoButton')));
+    await tester.pumpAndSettle();
+    expect(repository.memos.single.highlights, controller.highlights);
+  });
+
+  testWidgets('메모를 즐겨찾기에 저장하고 즐겨찾기만 필터링한다', (tester) async {
+    final repository = _MemoryMemoRepository([
+      Memo(
+        id: 'favorite-target',
+        title: '중요 메모',
+        content: '반드시 다시 확인',
+        createdAt: DateTime(2026, 7, 28, 10),
+        updatedAt: DateTime(2026, 7, 28, 10),
+      ),
+      Memo(
+        id: 'normal-memo',
+        title: '일반 메모',
+        content: '일반 내용',
+        createdAt: DateTime(2026, 7, 28, 11),
+        updatedAt: DateTime(2026, 7, 28, 11),
+      ),
+    ]);
+    await _pumpMemoList(tester, repository);
+
+    await tester.tap(find.byKey(const Key('memoFavorite_favorite-target')));
+    await tester.pumpAndSettle();
+    expect(
+      repository.memos
+          .singleWhere((memo) => memo.id == 'favorite-target')
+          .isFavorite,
+      isTrue,
+    );
+
+    await tester.tap(find.byKey(const Key('favoriteMemoFilterButton')));
+    await tester.pump();
+    expect(find.byKey(const Key('memoCard_favorite-target')), findsOneWidget);
+    expect(find.byKey(const Key('memoCard_normal-memo')), findsNothing);
+  });
+
   test('기존 저장 데이터는 사진과 형광펜 없이도 정상 복원된다', () {
     final memo = Memo.fromJson({
       'id': 'legacy',
@@ -244,6 +319,7 @@ void main() {
 
     expect(memo.photos, isEmpty);
     expect(memo.highlights, isEmpty);
+    expect(memo.isFavorite, isFalse);
   });
 
   test('사진과 형광펜 데이터가 JSON 저장 후 그대로 복원된다', () {
@@ -260,6 +336,7 @@ void main() {
       updatedAt: DateTime(2026, 7, 28, 11),
       highlights: const [MemoHighlight(start: 0, end: 3)],
       photos: const [photo],
+      isFavorite: true,
     );
 
     final decoded = (jsonDecode(jsonEncode(original.toJson())) as Map)
@@ -268,6 +345,7 @@ void main() {
 
     expect(restored.highlights, original.highlights);
     expect(restored.photos, original.photos);
+    expect(restored.isFavorite, isTrue);
   });
 }
 

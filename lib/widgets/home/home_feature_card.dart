@@ -24,91 +24,100 @@ class HomeFeatureCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: background,
-      borderRadius: BorderRadius.circular(26),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(26),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(18, 22, 18, 18),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(26),
-            border: Border.all(color: accent.withValues(alpha: 0.10)),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0A3E3568),
-                blurRadius: 20,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Expanded(
-                flex: 5,
-                child: Center(
-                  child: _FeatureIllustration(
-                    icon: icon,
-                    secondaryIcon: secondaryIcon,
-                    accent: accent,
-                    illustration: illustration,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 170;
+        return Material(
+          color: background,
+          borderRadius: BorderRadius.circular(compact ? 20 : 26),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(compact ? 20 : 26),
+            child: Container(
+              padding: compact
+                  ? const EdgeInsets.fromLTRB(8, 10, 8, 10)
+                  : const EdgeInsets.fromLTRB(18, 22, 18, 18),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(compact ? 20 : 26),
+                border: Border.all(color: accent.withValues(alpha: 0.10)),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x0A3E3568),
+                    blurRadius: 20,
+                    offset: Offset(0, 8),
                   ),
-                ),
+                ],
               ),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: accent,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.6,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Expanded(
-                flex: 3,
-                child: Text(
-                  description,
-                  textAlign: TextAlign.center,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF67697A),
-                    fontSize: 13,
-                    height: 1.45,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: accent,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: accent.withValues(alpha: 0.24),
-                      blurRadius: 12,
-                      offset: const Offset(0, 5),
+              child: Column(
+                children: [
+                  Expanded(
+                    flex: compact ? 4 : 5,
+                    child: Center(
+                      child: _FeatureIllustration(
+                        icon: icon,
+                        secondaryIcon: secondaryIcon,
+                        accent: accent,
+                        illustration: illustration,
+                        compact: compact,
+                      ),
                     ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.chevron_right_rounded,
-                  color: Colors.white,
-                  size: 24,
-                ),
+                  ),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: accent,
+                      fontSize: compact ? 13 : 18,
+                      height: 1.15,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: compact ? -0.4 : -0.6,
+                    ),
+                  ),
+                  SizedBox(height: compact ? 4 : 8),
+                  Expanded(
+                    flex: compact ? 2 : 3,
+                    child: Text(
+                      description,
+                      textAlign: TextAlign.center,
+                      maxLines: compact ? 2 : 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: const Color(0xFF67697A),
+                        fontSize: compact ? 9.5 : 13,
+                        height: compact ? 1.3 : 1.45,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: compact ? 5 : 10),
+                  Container(
+                    width: compact ? 28 : 38,
+                    height: compact ? 28 : 38,
+                    decoration: BoxDecoration(
+                      color: accent,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: accent.withValues(alpha: 0.24),
+                          blurRadius: 12,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.chevron_right_rounded,
+                      color: Colors.white,
+                      size: compact ? 19 : 24,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -119,21 +128,27 @@ class _FeatureIllustration extends StatelessWidget {
     required this.secondaryIcon,
     required this.accent,
     required this.illustration,
+    required this.compact,
   });
 
   final IconData icon;
   final IconData? secondaryIcon;
   final Color accent;
   final Widget? illustration;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     if (illustration != null) {
-      return SizedBox(width: 106, height: 96, child: illustration);
+      return SizedBox(
+        width: compact ? 66 : 106,
+        height: compact ? 60 : 96,
+        child: illustration,
+      );
     }
     return SizedBox(
-      width: 96,
-      height: 88,
+      width: compact ? 62 : 96,
+      height: compact ? 56 : 88,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -161,7 +176,7 @@ class _FeatureIllustration extends StatelessWidget {
               ),
             ),
           ),
-          Icon(icon, color: accent, size: 66),
+          Icon(icon, color: accent, size: compact ? 44 : 66),
           if (secondaryIcon != null)
             Positioned(
               right: 4,

@@ -47,7 +47,8 @@ NurseMate는 간호사를 위한 프리미엄 모바일 앱이다. 병원 EMR처
 - 카드 내부 여백: 20~24px
 - 카드 사이 간격: 14~18px
 - 콘텐츠 최대 너비: 대시보드 1120px, 폼 720px
-- 모바일에서는 한 열 또는 두 열을 우선하고 넓은 화면에서만 열을 늘린다.
+- 모바일 열 구성은 첨부 시안을 그대로 따른다. 시안이 3열이면 임의로
+  1열이나 2열로 재해석하지 않는다.
 
 대부분의 화면은 `Header → Title/Description → Main Card → Supporting Card
 → Bottom Navigation` 순서를 따른다.
@@ -150,6 +151,35 @@ NurseMateCard(
 - UI 변경으로 계산, 애니메이션, 저장, 잠금 로직을 수정하지 않는다.
 - `flutter analyze` 오류 0개와 전체 테스트 통과를 유지한다.
 
+## 시안 복제 작업 절차
+
+모든 UI 작업은 다음 순서를 지킨다.
+
+1. 첨부 시안을 화면 영역별로 분석한다.
+2. 현재 Flutter 렌더링과 비교한다.
+3. 위치, 크기, 비율, 여백, 색상, 타이포그래피 차이를 기록한다.
+4. 기존 Design System 컴포넌트를 재사용해 차이를 수정한다.
+5. 동일한 화면 크기에서 다시 렌더링한다.
+6. `docs/UI_REPLICATION_CHECKLIST.md`를 기준으로 재비교한다.
+7. 남은 차이가 설명 가능한 수준일 때만 완료 처리한다.
+
+기능이 동작한다는 이유만으로 UI 작업을 완료하지 않는다. 새 디자인을
+제안하거나 시안을 더 낫게 재해석하지 않는다.
+
+## 금지되는 기본 Material 표현
+
+아래 요소를 기본 모양 그대로 노출하지 않는다.
+
+- `Card`
+- `FilledButton`, `ElevatedButton`, `OutlinedButton`
+- `TextField`
+- `Dialog`
+- `FloatingActionButton`
+- Material Calendar
+
+Flutter 위젯 자체의 사용을 금지하는 것은 아니다. 반드시 NurseMate Theme,
+공통 컴포넌트, 커스텀 Decoration을 적용해 시안의 형태로 표현한다.
+
 ## 기능 보호
 
 다음 기능은 UI 작업 중 절대 깨뜨리지 않는다.
@@ -165,11 +195,50 @@ NurseMateCard(
 
 ## 모든 UI 작업에 사용하는 공통 프롬프트
 
-> 기능 구현 전에 반드시 기존 NurseMate 디자인 시스템과 첨부 시안을
-> 분석하세요. 새로운 스타일을 만들지 말고 `lib/design_system/`의 Theme,
-> 색상, 여백, Radius, 그림자, Typography와 기존 공통 Widget을 우선
-> 재사용하세요. 화면은 Premium Medical Dashboard 스타일, 파스텔 색상,
-> 둥근 카드, 넓은 여백, 의료 일러스트 중심으로 구성하세요. Material 기본
-> 느낌이 그대로 보이면 안 됩니다. 모바일 UX와 디자인 일관성을 기능 추가보다
-> 우선하며, 기존 비즈니스 로직은 변경하지 마세요.
+> 이번 작업의 최우선 목표는 기능 구현이 아니라 첨부 UI 시안을 Flutter에서
+> 최대한 동일하게 복제하는 것입니다. 디자인을 새롭게 제안하거나 재해석하지
+> 마세요. 기능 구현 전에 현재 화면과 시안의 차이를 분석하고,
+> `NURSEMATE_DESIGN_SYSTEM.md`, `AGENTS.md`, `nursemate_tokens.dart`,
+> `nursemate_theme.dart`, `nursemate_components.dart`의 기존 Theme와
+> 컴포넌트를 우선 재사용하세요. Header, Calendar, Card, Feature Card,
+> Typography, Bottom Navigation, Color, Animation, Spacing을 동일한
+> 화면 크기에서 하나씩 비교하고 수정 후 다시 검증하세요. Material 기본
+> 느낌을 노출하지 말고 기존 비즈니스 로직은 변경하지 마세요. 기능이
+> 동작한다는 이유만으로 완료하지 말고 시안과의 시각적 차이가 충분히 해소된
+> 뒤 `flutter analyze`, `flutter test`, `flutter build web`을 실행하세요.
+>
+> 당신은 Flutter 개발자가 아니라 Senior Product Designer + Senior Flutter
+> Engineer입니다. 간격, 크기, 비율, 아이콘 위치, 그림자, Radius,
+> Typography까지 픽셀 단위로 최대한 재현하고 기능보다 UI 완성도를
+> 우선하세요.
+
+## UI 작업 완료 보고 형식
+
+UI 작업 완료 시 아래 형식을 사용한다.
+
+```text
+## 시안과 비교 결과
+
+Header
+- 일치도: 검증된 범위와 근거
+- 남은 차이: 없음 또는 구체적인 차이
+
+Calendar
+- 일치도: 검증된 범위와 근거
+- 남은 차이: 없음 또는 구체적인 차이
+
+Feature Card
+- 일치도: 검증된 범위와 근거
+- 남은 차이: 없음 또는 구체적인 차이
+
+Bottom Navigation / Spacing / Typography / Animation
+- 동일한 형식으로 기록
+
+전체 UI 유사도
+- 실제 렌더링 비교가 수행된 경우에만 백분율과 산정 근거 기록
+- 비교할 수 없었다면 퍼센트 대신 "정량 측정 안 됨"으로 기록
+```
+
+유사도 백분율은 객관적 측정값이 아니라면 임의로 작성하지 않는다. 반드시
+검증한 화면 크기, 비교 방법, 확인한 차이를 함께 보고한다.
 

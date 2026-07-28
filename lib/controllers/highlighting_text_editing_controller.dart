@@ -14,20 +14,57 @@ class HighlightingTextEditingController extends TextEditingController {
     addListener(_handleTextChange);
   }
 
-  static const Color highlightColor = Color(0xFFFFF59D);
+  static const Color highlightColor = Color(MemoHighlight.defaultColorValue);
+  static const List<Color> highlightColors = [
+    Color(0xFFFFF59D),
+    Color(0xFFB9F6D2),
+    Color(0xFFFFC4D6),
+    Color(0xFFBFDDFC),
+    Color(0xFFD8CAFF),
+  ];
 
   final List<MemoHighlight> _highlights;
   String _previousText;
 
   List<MemoHighlight> get highlights => List.unmodifiable(_highlights);
 
-  bool highlightSelection() {
+  bool highlightSelection({Color color = highlightColor}) {
     final selection = this.selection;
     if (!selection.isValid || selection.isCollapsed) return false;
 
     final start = math.min(selection.start, selection.end);
     final end = math.max(selection.start, selection.end);
-    _highlights.add(MemoHighlight(start: start, end: end));
+    final updated = <MemoHighlight>[];
+    for (final highlight in _highlights) {
+      if (highlight.end <= start || highlight.start >= end) {
+        updated.add(highlight);
+        continue;
+      }
+      if (highlight.start < start) {
+        updated.add(
+          MemoHighlight(
+            start: highlight.start,
+            end: start,
+            colorValue: highlight.colorValue,
+          ),
+        );
+      }
+      if (highlight.end > end) {
+        updated.add(
+          MemoHighlight(
+            start: end,
+            end: highlight.end,
+            colorValue: highlight.colorValue,
+          ),
+        );
+      }
+    }
+    updated.add(
+      MemoHighlight(start: start, end: end, colorValue: color.toARGB32()),
+    );
+    _highlights
+      ..clear()
+      ..addAll(updated);
     _normalizeHighlights();
     notifyListeners();
     return true;
@@ -49,10 +86,22 @@ class HighlightingTextEditingController extends TextEditingController {
       }
       didChange = true;
       if (highlight.start < start) {
-        updated.add(MemoHighlight(start: highlight.start, end: start));
+        updated.add(
+          MemoHighlight(
+            start: highlight.start,
+            end: start,
+            colorValue: highlight.colorValue,
+          ),
+        );
       }
       if (highlight.end > end) {
-        updated.add(MemoHighlight(start: end, end: highlight.end));
+        updated.add(
+          MemoHighlight(
+            start: end,
+            end: highlight.end,
+            colorValue: highlight.colorValue,
+          ),
+        );
       }
     }
 
@@ -96,6 +145,7 @@ class HighlightingTextEditingController extends TextEditingController {
           MemoHighlight(
             start: highlight.start + delta,
             end: highlight.end + delta,
+            colorValue: highlight.colorValue,
           ),
         );
       }
@@ -114,14 +164,36 @@ class HighlightingTextEditingController extends TextEditingController {
           ..sort((a, b) => a.start.compareTo(b.start));
     final merged = <MemoHighlight>[];
     for (final highlight in valid) {
-      if (merged.isEmpty || highlight.start > merged.last.end) {
+      if (merged.isEmpty || highlight.start >= merged.last.end) {
+        if (merged.isNotEmpty &&
+            highlight.start == merged.last.end &&
+            highlight.colorValue == merged.last.colorValue) {
+          final previous = merged.removeLast();
+          merged.add(
+            MemoHighlight(
+              start: previous.start,
+              end: highlight.end,
+              colorValue: previous.colorValue,
+            ),
+          );
+          continue;
+        }
         merged.add(highlight);
-      } else {
+      } else if (highlight.colorValue == merged.last.colorValue) {
         final previous = merged.removeLast();
         merged.add(
           MemoHighlight(
             start: previous.start,
             end: math.max(previous.end, highlight.end),
+            colorValue: previous.colorValue,
+          ),
+        );
+      } else if (highlight.end > merged.last.end) {
+        merged.add(
+          MemoHighlight(
+            start: merged.last.end,
+            end: highlight.end,
+            colorValue: highlight.colorValue,
           ),
         );
       }
@@ -171,9 +243,13 @@ class HighlightingTextEditingController extends TextEditingController {
     TextStyle? baseStyle,
     TextRange composing,
   ) {
-    final isHighlighted = _highlights.any(
-      (highlight) => highlight.start < end && highlight.end > start,
-    );
+    Color? backgroundColor;
+    for (final highlight in _highlights) {
+      if (highlight.start < end && highlight.end > start) {
+        backgroundColor = Color(highlight.colorValue);
+        break;
+      }
+    }
     final isComposing =
         composing.isValid &&
         !composing.isCollapsed &&
@@ -183,7 +259,7 @@ class HighlightingTextEditingController extends TextEditingController {
     return TextSpan(
       text: text.substring(start, end),
       style: (baseStyle ?? const TextStyle()).copyWith(
-        backgroundColor: isHighlighted ? highlightColor : null,
+        backgroundColor: backgroundColor,
         decoration: isComposing ? TextDecoration.underline : null,
       ),
     );
