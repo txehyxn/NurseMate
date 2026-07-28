@@ -1,24 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-import '../repositories/drug_preferences_repository.dart';
-import '../repositories/drug_repository.dart';
 import '../repositories/memo_repository.dart';
-import 'drug_search_screen.dart';
 import 'infusion_calculator_screen.dart';
 import 'infusion_speed_check_screen.dart';
 import 'memo_list_screen.dart';
+
+final Uri kKpicDrugSearchUri = Uri.parse(
+  'https://health.kr/searchDrug/search_detail.asp',
+);
+
+typedef ExternalUrlLauncher = Future<bool> Function(Uri uri);
+
+Future<bool> _launchExternalUrl(Uri uri) {
+  return launchUrl(uri, mode: LaunchMode.externalApplication);
+}
 
 class MainMenuScreen extends StatelessWidget {
   const MainMenuScreen({
     super.key,
     this.memoRepository,
-    this.drugRepository,
-    this.drugPreferencesRepository,
+    this.externalUrlLauncher = _launchExternalUrl,
   });
 
   final MemoRepository? memoRepository;
-  final DrugRepository? drugRepository;
-  final DrugPreferencesRepository? drugPreferencesRepository;
+  final ExternalUrlLauncher externalUrlLauncher;
 
   @override
   Widget build(BuildContext context) {
@@ -105,16 +111,18 @@ class MainMenuScreen extends StatelessWidget {
                     key: const Key('drugSearchMenu'),
                     icon: Icons.medication_outlined,
                     title: '약 검색',
-                    description: '투약 전 필요한 핵심 약 정보를 제품명 또는 성분명으로 확인합니다.',
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => DrugSearchScreen(
-                            drugRepository: drugRepository,
-                            preferencesRepository: drugPreferencesRepository,
-                          ),
-                        ),
+                    description: '약학정보원 의약품 상세검색을 엽니다.',
+                    onTap: () async {
+                      final launched = await externalUrlLauncher(
+                        kKpicDrugSearchUri,
                       );
+                      if (!launched && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('약학정보원 페이지를 열지 못했습니다.'),
+                          ),
+                        );
+                      }
                     },
                   ),
                 ],

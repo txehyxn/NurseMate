@@ -1,33 +1,10 @@
-# nursemate
+# NurseMate
 
-A new Flutter project.
+병원 현장에서 사용하는 오프라인 수액 계산 및 간호 업무 보조 Flutter 앱입니다.
 
-## Getting Started
+## 약 검색
 
-This project is a starting point for a Flutter application.
+메인 메뉴의 `약 검색`을 누르면 기본 브라우저에서 약학정보원의 공식
+의약품 상세검색 페이지를 엽니다.
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
-## Official drug data API
-
-NurseMate calls its same-origin `/api/drugs` Vercel Function. The function
-combines MFDS pharmaceutical product authorization, e약은요, and pill
-identification data without exposing the public-data service key to Flutter.
-
-1. Apply for the relevant MFDS APIs at `data.go.kr`.
-2. Add the decoded service key to Vercel as `MFDS_SERVICE_KEY` for Production,
-   Preview, and Development.
-3. For local Function development, copy `.env.example` to `.env.local` and
-   fill the key. Never commit `.env.local`.
-4. Run the site with `vercel dev` when testing the Function locally.
-
-When the Function or key is unavailable, the Flutter repository automatically
-falls back to the verified sample `DrugCatalog`.
+`https://health.kr/searchDrug/search_detail.asp`
