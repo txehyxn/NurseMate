@@ -18,11 +18,14 @@ class HiveDutyRepository implements DutyRepository {
 
   final Box<String> _box;
 
-  static Future<HiveDutyRepository> open() async {
-    if (!Hive.isBoxOpen(boxName)) {
+  static Future<HiveDutyRepository> open({String? namespace}) async {
+    final resolvedBoxName = namespace == null || namespace.isEmpty
+        ? boxName
+        : '${boxName}_${_safeNamespace(namespace)}';
+    if (!Hive.isBoxOpen(resolvedBoxName)) {
       await Hive.initFlutter();
     }
-    final box = await Hive.openBox<String>(boxName);
+    final box = await Hive.openBox<String>(resolvedBoxName);
     return HiveDutyRepository._(box);
   }
 
@@ -38,6 +41,15 @@ class HiveDutyRepository implements DutyRepository {
     return duties;
   }
 
+  Future<Map<String, DutyType>> getAll() async {
+    final duties = <String, DutyType>{};
+    for (final key in _box.keys.whereType<String>()) {
+      final type = DutyType.fromStorage(_box.get(key) ?? '');
+      if (type != null) duties[key] = type;
+    }
+    return duties;
+  }
+
   @override
   Future<void> save(DateTime date, DutyType type) {
     return _box.put(dutyDateKey(date), type.name);
@@ -47,4 +59,8 @@ class HiveDutyRepository implements DutyRepository {
   Future<void> delete(DateTime date) {
     return _box.delete(dutyDateKey(date));
   }
+}
+
+String _safeNamespace(String value) {
+  return value.replaceAll(RegExp('[^a-zA-Z0-9_-]'), '_');
 }

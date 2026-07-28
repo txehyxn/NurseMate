@@ -5,6 +5,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/duty_type.dart';
 import '../repositories/duty_repository.dart';
 import '../repositories/memo_repository.dart';
+import '../services/auth_service.dart';
+import '../services/cloud_service.dart';
+import '../services/repository_service.dart';
 import '../widgets/home/duty_calendar_card.dart';
 import '../widgets/home/home_bottom_navigation.dart';
 import '../widgets/home/home_feature_card.dart';
@@ -16,6 +19,7 @@ import 'duty_manage_screen.dart';
 import 'infusion_calculator_screen.dart';
 import 'infusion_speed_check_screen.dart';
 import 'memo_list_screen.dart';
+import 'my_page_screen.dart';
 
 final Uri kKpicDrugSearchUri = Uri.parse(
   'https://health.kr/searchDrug/search_detail.asp',
@@ -28,12 +32,14 @@ class MainMenuScreen extends StatefulWidget {
     this.dutyRepository,
     this.initialDutyMonth,
     this.dutyToday,
+    this.authService,
   });
 
   final MemoRepository? memoRepository;
   final DutyRepository? dutyRepository;
   final DateTime? initialDutyMonth;
   final DateTime? dutyToday;
+  final AuthService? authService;
 
   @override
   State<MainMenuScreen> createState() => _MainMenuScreenState();
@@ -41,6 +47,7 @@ class MainMenuScreen extends StatefulWidget {
 
 class _MainMenuScreenState extends State<MainMenuScreen> {
   DutyRepository? _dutyRepository;
+  MemoRepository? _memoRepository;
   late DateTime _dutyMonth;
   Map<String, DutyType> _duties = const {};
 
@@ -49,11 +56,14 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     super.initState();
     final initialMonth = widget.initialDutyMonth ?? DateTime.now();
     _dutyMonth = DateTime(initialMonth.year, initialMonth.month);
-    _initializeDuties();
+    _dutyRepository = widget.dutyRepository;
+    _memoRepository = widget.memoRepository;
+    _initializeRepositories();
   }
 
-  Future<void> _initializeDuties() async {
-    _dutyRepository = widget.dutyRepository ?? await HiveDutyRepository.open();
+  Future<void> _initializeRepositories() async {
+    _dutyRepository ??= await RepositoryService.openDutyRepository();
+    _memoRepository ??= await RepositoryService.openMemoRepository();
     await _loadDuties();
   }
 
@@ -96,6 +106,10 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     _open(ComingSoonScreen(title: title, icon: icon));
   }
 
+  void _openProfile() {
+    _open(MyPageScreen(authService: widget.authService ?? CloudService.auth));
+  }
+
   Future<void> _openDrugSearch() async {
     if (!await launchUrl(kKpicDrugSearchUri, webOnlyWindowName: '_self') &&
         mounted) {
@@ -112,10 +126,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
       bottomNavigationBar: HomeBottomNavigation(
         onHome: () {},
         onCalculation: () => _open(const InfusionCalculatorScreen()),
-        onRecords: () =>
-            _open(MemoListScreen(repository: widget.memoRepository)),
+        onRecords: () => _open(MemoListScreen(repository: _memoRepository)),
         onKnowledge: _openDrugSearch,
-        onProfile: () => _comingSoon('마이', Icons.person_outline_rounded),
+        onProfile: _openProfile,
       ),
       body: SafeArea(
         bottom: false,
@@ -132,8 +145,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                     child: HomeHeader(
                       onNotifications: () =>
                           _comingSoon('알림', Icons.notifications_none_rounded),
-                      onProfile: () =>
-                          _comingSoon('마이', Icons.person_outline_rounded),
+                      onProfile: _openProfile,
                     ),
                   ),
                   const SizedBox(height: 28),
@@ -154,7 +166,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                   ),
                   const SizedBox(height: 18),
                   _FeatureGrid(
-                    memoRepository: widget.memoRepository,
+                    memoRepository: _memoRepository,
                     onOpen: _open,
                     onComingSoon: _comingSoon,
                   ),

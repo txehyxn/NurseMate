@@ -19,11 +19,14 @@ class HiveMemoRepository implements MemoRepository {
 
   final Box<String> _box;
 
-  static Future<HiveMemoRepository> open() async {
-    if (!Hive.isBoxOpen(_boxName)) {
+  static Future<HiveMemoRepository> open({String? namespace}) async {
+    final boxName = namespace == null || namespace.isEmpty
+        ? _boxName
+        : '${_boxName}_${_safeNamespace(namespace)}';
+    if (!Hive.isBoxOpen(boxName)) {
       await Hive.initFlutter();
     }
-    final box = await Hive.openBox<String>(_boxName);
+    final box = await Hive.openBox<String>(boxName);
     return HiveMemoRepository._(box);
   }
 
@@ -48,4 +51,8 @@ class HiveMemoRepository implements MemoRepository {
   Future<void> delete(String id) async {
     await _box.delete(id);
   }
+}
+
+String _safeNamespace(String value) {
+  return value.replaceAll(RegExp('[^a-zA-Z0-9_-]'), '_');
 }

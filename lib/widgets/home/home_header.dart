@@ -69,6 +69,7 @@ class HomeHeader extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         InkWell(
+          key: const Key('homeProfileButton'),
           onTap: onProfile,
           borderRadius: BorderRadius.circular(24),
           child: Container(

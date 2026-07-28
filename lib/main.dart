@@ -1,13 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'config/app_access_config.dart';
 import 'design_system/nursemate_theme.dart';
+import 'models/app_user.dart';
 import 'screens/app_lock_screen.dart';
 import 'screens/main_menu_screen.dart';
+import 'services/auth_service.dart';
+import 'services/cloud_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await CloudService.initialize();
+  } on Object {
+    // Cloud configuration must never prevent offline access to NurseMate.
+  }
   final preferences = await SharedPreferences.getInstance();
   final isUnlocked = preferences.getBool(nurseMateUnlockedKey) ?? false;
 
@@ -31,11 +41,31 @@ class NurseMateApp extends StatefulWidget {
 
 class _NurseMateAppState extends State<NurseMateApp> {
   late bool _isUnlocked;
+  late final AuthService _authService;
+  StreamSubscription<AppUser?>? _authSubscription;
+  AppUser? _currentUser;
 
   @override
   void initState() {
     super.initState();
     _isUnlocked = widget.initiallyUnlocked;
+    _authService = CloudService.auth;
+    _currentUser = _authService.currentUser;
+    _authSubscription = _authService.userChanges.listen(
+      (user) {
+        if (!mounted || user?.id == _currentUser?.id) return;
+        setState(() => _currentUser = user);
+      },
+      onError: (_, _) {
+        // Offline token refresh failures must not crash the app.
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _unlock() async {
@@ -59,7 +89,10 @@ class _NurseMateAppState extends State<NurseMateApp> {
       title: 'NurseMate',
       theme: NurseMateTheme.light(),
       home: _isUnlocked
-          ? const MainMenuScreen()
+          ? MainMenuScreen(
+              key: ValueKey(_currentUser?.id ?? 'guest'),
+              authService: _authService,
+            )
           : AppLockScreen(onUnlocked: _unlock),
     );
   }
