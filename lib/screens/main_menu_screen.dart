@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:url_launcher/link.dart';
 
 import '../repositories/memo_repository.dart';
 import 'infusion_calculator_screen.dart';
@@ -10,21 +10,10 @@ final Uri kKpicDrugSearchUri = Uri.parse(
   'https://health.kr/searchDrug/search_detail.asp',
 );
 
-typedef ExternalUrlLauncher = Future<bool> Function(Uri uri);
-
-Future<bool> _launchExternalUrl(Uri uri) {
-  return launchUrl(uri, mode: LaunchMode.externalApplication);
-}
-
 class MainMenuScreen extends StatelessWidget {
-  const MainMenuScreen({
-    super.key,
-    this.memoRepository,
-    this.externalUrlLauncher = _launchExternalUrl,
-  });
+  const MainMenuScreen({super.key, this.memoRepository});
 
   final MemoRepository? memoRepository;
-  final ExternalUrlLauncher externalUrlLauncher;
 
   @override
   Widget build(BuildContext context) {
@@ -107,23 +96,24 @@ class MainMenuScreen extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 14),
-                  _MenuCard(
-                    key: const Key('drugSearchMenu'),
-                    icon: Icons.medication_outlined,
-                    title: '약 검색',
-                    description: '약학정보원 의약품 상세검색을 엽니다.',
-                    onTap: () async {
-                      final launched = await externalUrlLauncher(
-                        kKpicDrugSearchUri,
-                      );
-                      if (!launched && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('약학정보원 페이지를 열지 못했습니다.'),
-                          ),
-                        );
-                      }
-                    },
+                  Link(
+                    uri: kKpicDrugSearchUri,
+                    target: LinkTarget.self,
+                    builder: (context, followLink) => _MenuCard(
+                      key: const Key('drugSearchMenu'),
+                      icon: Icons.medication_outlined,
+                      title: '약 검색',
+                      description: '약학정보원 의약품 상세검색을 엽니다.',
+                      onTap:
+                          followLink ??
+                          () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('약학정보원 페이지를 열지 못했습니다.'),
+                              ),
+                            );
+                          },
+                    ),
                   ),
                 ],
               ),
