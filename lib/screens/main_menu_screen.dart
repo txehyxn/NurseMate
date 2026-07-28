@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
 
+import '../repositories/drug_preferences_repository.dart';
+import '../repositories/drug_repository.dart';
 import '../repositories/memo_repository.dart';
+import 'drug_search_screen.dart';
 import 'infusion_calculator_screen.dart';
 import 'infusion_speed_check_screen.dart';
 import 'memo_list_screen.dart';
 
 class MainMenuScreen extends StatelessWidget {
-  const MainMenuScreen({super.key, this.memoRepository});
+  const MainMenuScreen({
+    super.key,
+    this.memoRepository,
+    this.drugRepository,
+    this.drugPreferencesRepository,
+  });
 
   final MemoRepository? memoRepository;
+  final DrugRepository? drugRepository;
+  final DrugPreferencesRepository? drugPreferencesRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +56,7 @@ class MainMenuScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 8),
-                  const Text('수액 계산, 실제 점적 속도, 메모를 한 곳에서 확인하세요.'),
+                  const Text('수액 계산, 실제 점적 속도, 메모와 약 정보를 한 곳에서 확인하세요.'),
                   const SizedBox(height: 26),
                   _MenuCard(
                     key: const Key('infusionCalculatorMenu'),
@@ -86,6 +96,23 @@ class MainMenuScreen extends StatelessWidget {
                         MaterialPageRoute<void>(
                           builder: (_) =>
                               MemoListScreen(repository: memoRepository),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  _MenuCard(
+                    key: const Key('drugSearchMenu'),
+                    icon: Icons.medication_outlined,
+                    title: '약 검색',
+                    description: '투약 전 필요한 핵심 약 정보를 제품명 또는 성분명으로 확인합니다.',
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => DrugSearchScreen(
+                            drugRepository: drugRepository,
+                            preferencesRepository: drugPreferencesRepository,
+                          ),
                         ),
                       );
                     },
