@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../repositories/memo_repository.dart';
 import 'infusion_calculator_screen.dart';
 import 'infusion_speed_check_screen.dart';
+import 'memo_list_screen.dart';
 
 class MainMenuScreen extends StatelessWidget {
-  const MainMenuScreen({super.key});
+  const MainMenuScreen({super.key, this.memoRepository});
+
+  final MemoRepository? memoRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +46,7 @@ class MainMenuScreen extends StatelessWidget {
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                   const SizedBox(height: 8),
-                  const Text('수액 계산 또는 실제 점적 속도를 확인할 수 있어요.'),
+                  const Text('수액 계산, 실제 점적 속도, 메모를 한 곳에서 확인하세요.'),
                   const SizedBox(height: 26),
                   _MenuCard(
                     key: const Key('infusionCalculatorMenu'),
@@ -67,6 +71,21 @@ class MainMenuScreen extends StatelessWidget {
                       Navigator.of(context).push(
                         MaterialPageRoute<void>(
                           builder: (_) => const InfusionSpeedCheckScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  _MenuCard(
+                    key: const Key('memoMenu'),
+                    icon: Icons.note_alt_outlined,
+                    title: '메모장',
+                    description: '필요한 내용을 오프라인 메모로 기록하고 검색합니다.',
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) =>
+                              MemoListScreen(repository: memoRepository),
                         ),
                       );
                     },
