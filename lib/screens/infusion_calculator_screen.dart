@@ -17,17 +17,14 @@ class _InfusionCalculatorScreenState extends State<InfusionCalculatorScreen> {
   final _formKey = GlobalKey<FormState>();
   final _volumeController = TextEditingController(text: '100');
   final _hoursController = TextEditingController(text: '3');
-  final _minutesController = TextEditingController(text: '0');
   final _calculator = const InfusionCalculator();
 
-  int _dropFactor = 20;
   InfusionCalculationResult? _result;
 
   @override
   void dispose() {
     _volumeController.dispose();
     _hoursController.dispose();
-    _minutesController.dispose();
     super.dispose();
   }
 
@@ -41,9 +38,7 @@ class _InfusionCalculatorScreenState extends State<InfusionCalculatorScreen> {
     try {
       final result = _calculator.calculate(
         volumeMl: double.parse(_volumeController.text),
-        hours: int.parse(_hoursController.text),
-        minutes: int.parse(_minutesController.text),
-        dropFactor: _dropFactor,
+        hours: double.parse(_hoursController.text),
       );
       setState(() => _result = result);
     } on Object catch (_) {
@@ -101,10 +96,6 @@ class _InfusionCalculatorScreenState extends State<InfusionCalculatorScreen> {
                       formKey: _formKey,
                       volumeController: _volumeController,
                       hoursController: _hoursController,
-                      minutesController: _minutesController,
-                      dropFactor: _dropFactor,
-                      onDropFactorChanged: (value) =>
-                          setState(() => _dropFactor = value),
                       onCalculate: _calculate,
                     ),
                   ),
@@ -220,7 +211,7 @@ class _SafetyNotice extends StatelessWidget {
           SizedBox(width: 10),
           Expanded(
             child: Text(
-              '계산 결과는 점적 속도 확인을 돕기 위한 참고값입니다. 실제 투여 전 처방, 수액세트 점적계수 및 기관 지침을 반드시 확인하세요.',
+              '계산 결과는 일반 성인 수액세트 20 gtt/mL 기준의 참고값입니다. 실제 투여 전 처방 및 기관 지침을 반드시 확인하세요.',
               style: TextStyle(color: Color(0xFF6F551B), fontSize: 13),
             ),
           ),

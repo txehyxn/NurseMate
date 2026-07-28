@@ -1,15 +1,13 @@
 import '../models/infusion_calculation_result.dart';
 
-class InfusionCalculator {
-  static const supportedDropFactors = <int>{10, 15, 20, 60};
+const double adultDropFactor = 20.0;
 
+class InfusionCalculator {
   const InfusionCalculator();
 
   InfusionCalculationResult calculate({
     required double volumeMl,
-    required int hours,
-    required int minutes,
-    required int dropFactor,
+    required double hours,
   }) {
     if (!volumeMl.isFinite || volumeMl <= 0) {
       throw ArgumentError.value(
@@ -18,27 +16,14 @@ class InfusionCalculator {
         '수액량은 0보다 큰 유한한 값이어야 합니다.',
       );
     }
-    if (hours < 0) {
-      throw ArgumentError.value(hours, 'hours', '시간은 0 이상이어야 합니다.');
-    }
-    if (minutes < 0 || minutes > 59) {
-      throw ArgumentError.value(minutes, 'minutes', '분은 0~59 사이여야 합니다.');
-    }
-    if (hours == 0 && minutes == 0) {
-      throw ArgumentError('주입 시간은 1분 이상이어야 합니다.');
-    }
-    if (!supportedDropFactors.contains(dropFactor)) {
-      throw ArgumentError.value(
-        dropFactor,
-        'dropFactor',
-        '지원하지 않는 수액세트 점적계수입니다.',
-      );
+    if (!hours.isFinite || hours <= 0) {
+      throw ArgumentError.value(hours, 'hours', '시간은 0보다 큰 유한한 값이어야 합니다.');
     }
 
-    final totalMinutes = hours * 60 + minutes;
-    final mlPerHour = volumeMl * 60 / totalMinutes;
-    final gttPerMinute = volumeMl * dropFactor / totalMinutes;
-    final secondsPerDrop = totalMinutes * 60 / (volumeMl * dropFactor);
+    final totalMinutes = hours * 60.0;
+    final mlPerHour = volumeMl / hours;
+    final gttPerMinute = (volumeMl * adultDropFactor) / totalMinutes;
+    final secondsPerDrop = 60.0 / gttPerMinute;
 
     if (![mlPerHour, gttPerMinute, secondsPerDrop].every((v) => v.isFinite)) {
       throw StateError('계산할 수 없는 입력값입니다.');

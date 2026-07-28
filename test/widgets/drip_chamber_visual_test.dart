@@ -6,7 +6,9 @@ void main() {
   group('dripCycleDuration', () {
     test('원본 secondsPerDrop을 마이크로초 Duration으로 변환한다', () {
       final cases = {
+        7.2: 7200000,
         5.4: 5400000,
+        2.7: 2700000,
         1.44: 1440000,
         2.16: 2160000,
         0.6: 600000,
@@ -38,7 +40,7 @@ void main() {
   });
 
   group('AnimatedDripChamber 주기', () {
-    for (final secondsPerDrop in [5.4, 2.16, 1.44, 0.6]) {
+    for (final secondsPerDrop in [7.2, 5.4, 2.7, 2.16, 1.44, 0.6]) {
       testWidgets('$secondsPerDrop초 직전에는 첫 주기이고 경과 후 새 주기가 시작된다', (
         tester,
       ) async {

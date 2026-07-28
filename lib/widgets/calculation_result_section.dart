@@ -20,6 +20,16 @@ class CalculationResultSection extends StatelessWidget {
             const _StatusPill(),
           ],
         ),
+        const SizedBox(height: 8),
+        const Text(
+          '일반 성인 수액세트 20 gtt/mL 기준',
+          key: Key('dropFactorBasis'),
+          style: TextStyle(
+            color: Color(0xFF5B6F82),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 18),
         _HeroRate(result: result),
         const SizedBox(height: 12),
@@ -28,7 +38,7 @@ class CalculationResultSection extends StatelessWidget {
             Expanded(
               child: _MetricCard(
                 label: '분당 점적 수',
-                value: '${result.gttPerMinute.toStringAsFixed(1)} gtt/min',
+                value: '${_formatFixedTwo(result.gttPerMinute)} gtt/min',
                 detail: '약 ${result.roundedDropsPerMinute}방울/분',
                 icon: Icons.water_drop_outlined,
               ),
@@ -37,8 +47,8 @@ class CalculationResultSection extends StatelessWidget {
             Expanded(
               child: _MetricCard(
                 label: '한 방울 간격',
-                value: '${result.secondsPerDrop.toStringAsFixed(1)}초',
-                detail: '마다 1방울',
+                value: '${_formatFixedTwo(result.secondsPerDrop)}초에 한 방울',
+                detail: '20 gtt/mL 기준',
                 icon: Icons.timer_outlined,
               ),
             ),
@@ -93,7 +103,7 @@ class _HeroRate extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                result.mlPerHour.toStringAsFixed(1),
+                _formatFixedTwo(result.mlPerHour),
                 key: const Key('mlPerHourValue'),
                 style: const TextStyle(
                   color: Colors.white,
@@ -107,7 +117,7 @@ class _HeroRate extends StatelessWidget {
               const Padding(
                 padding: EdgeInsets.only(bottom: 3),
                 child: Text(
-                  'mL/hr',
+                  'cc/hr',
                   style: TextStyle(
                     color: Color(0xFF64B5F6),
                     fontSize: 17,
@@ -122,6 +132,8 @@ class _HeroRate extends StatelessWidget {
     );
   }
 }
+
+String _formatFixedTwo(double value) => value.toStringAsFixed(2);
 
 class _MetricCard extends StatelessWidget {
   const _MetricCard({
