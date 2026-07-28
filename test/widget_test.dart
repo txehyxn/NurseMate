@@ -94,7 +94,13 @@ void main() {
 
 Future<void> _openCalculator(WidgetTester tester) async {
   await tester.pumpWidget(const NurseMateApp(initiallyUnlocked: true));
-  await tester.tap(find.byKey(const Key('infusionCalculatorMenu')));
+  final calculatorAction = tester.widget<InkWell>(
+    find.descendant(
+      of: find.byKey(const Key('infusionCalculatorMenu')),
+      matching: find.byType(InkWell),
+    ),
+  );
+  calculatorAction.onTap!();
   await tester.pumpAndSettle();
 }
 

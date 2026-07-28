@@ -23,10 +23,16 @@ void main() {
   testWidgets('메인 화면에서 기존 계산과 수액속도 확인 메뉴를 제공한다', (tester) async {
     await tester.pumpWidget(const NurseMateApp(initiallyUnlocked: true));
 
-    expect(find.text('수액 계산'), findsOneWidget);
-    expect(find.text('수액속도 확인하기'), findsOneWidget);
+    expect(find.text('수액속도 계산'), findsOneWidget);
+    expect(find.text('방울수 계산'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('infusionSpeedCheckMenu')));
+    final quickAction = tester.widget<InkWell>(
+      find.descendant(
+        of: find.byKey(const Key('infusionSpeedCheckMenu')),
+        matching: find.byType(InkWell),
+      ),
+    );
+    quickAction.onTap!();
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 

@@ -17,7 +17,13 @@ void main() {
     );
 
     expect(find.text('메모장'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('memoMenu')));
+    final memoAction = tester.widget<InkWell>(
+      find.descendant(
+        of: find.byKey(const Key('memoMenu')),
+        matching: find.byType(InkWell),
+      ),
+    );
+    memoAction.onTap!();
     await tester.pumpAndSettle();
 
     expect(find.byType(MemoListScreen), findsOneWidget);

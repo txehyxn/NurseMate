@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/link.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../repositories/memo_repository.dart';
+import '../widgets/home/duty_calendar_card.dart';
+import '../widgets/home/home_bottom_navigation.dart';
+import '../widgets/home/home_feature_card.dart';
+import '../widgets/home/home_header.dart';
+import '../widgets/home/home_illustration.dart';
+import '../widgets/home/home_quick_sections.dart';
+import 'coming_soon_screen.dart';
 import 'infusion_calculator_screen.dart';
 import 'infusion_speed_check_screen.dart';
 import 'memo_list_screen.dart';
@@ -15,105 +23,128 @@ class MainMenuScreen extends StatelessWidget {
 
   final MemoRepository? memoRepository;
 
+  void _open(BuildContext context, Widget screen) {
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
+  }
+
+  void _comingSoon(BuildContext context, String title, IconData icon) {
+    _open(context, ComingSoonScreen(title: title, icon: icon));
+  }
+
+  Future<void> _openDrugSearch(BuildContext context) async {
+    if (!await launchUrl(kKpicDrugSearchUri, webOnlyWindowName: '_self') &&
+        context.mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('약학정보원 페이지를 열지 못했습니다.')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        titleSpacing: 20,
-        title: const Row(
-          children: [
-            _BrandMark(),
-            SizedBox(width: 10),
-            Text(
-              'NurseMate',
-              style: TextStyle(
-                color: Color(0xFF17324D),
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.4,
-              ),
-            ),
-          ],
-        ),
+      backgroundColor: const Color(0xFFFBFAFE),
+      bottomNavigationBar: HomeBottomNavigation(
+        onHome: () {},
+        onCalculation: () => _open(context, const InfusionCalculatorScreen()),
+        onRecords: () =>
+            _open(context, MemoListScreen(repository: memoRepository)),
+        onKnowledge: () => _openDrugSearch(context),
+        onProfile: () =>
+            _comingSoon(context, '마이', Icons.person_outline_rounded),
       ),
       body: SafeArea(
+        bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(18, 28, 18, 36),
+          padding: const EdgeInsets.fromLTRB(18, 20, 18, 36),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 720),
+              constraints: const BoxConstraints(maxWidth: 1120),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    '원하는 기능을 선택하세요',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  const Text('수액 계산, 실제 점적 속도, 메모와 약 정보를 한 곳에서 확인하세요.'),
-                  const SizedBox(height: 26),
-                  _MenuCard(
-                    key: const Key('infusionCalculatorMenu'),
-                    icon: Icons.calculate_outlined,
-                    title: '수액 계산',
-                    description: '용량과 시간을 입력해 주입 속도와 점적 간격을 계산합니다.',
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const InfusionCalculatorScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 14),
-                  _MenuCard(
-                    key: const Key('infusionSpeedCheckMenu'),
-                    icon: Icons.water_drop_outlined,
-                    title: '수액속도 확인하기',
-                    description: '선택한 cc/hr의 실제 방울 속도를 눈으로 확인합니다.',
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) => const InfusionSpeedCheckScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 14),
-                  _MenuCard(
-                    key: const Key('memoMenu'),
-                    icon: Icons.note_alt_outlined,
-                    title: '메모장',
-                    description: '필요한 내용을 오프라인 메모로 기록하고 검색합니다.',
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (_) =>
-                              MemoListScreen(repository: memoRepository),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 14),
-                  Link(
-                    uri: kKpicDrugSearchUri,
-                    target: LinkTarget.self,
-                    builder: (context, followLink) => _MenuCard(
-                      key: const Key('drugSearchMenu'),
-                      icon: Icons.medication_outlined,
-                      title: '약 검색',
-                      description: '약학정보원 의약품 상세검색을 엽니다.',
-                      onTap:
-                          followLink ??
-                          () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('약학정보원 페이지를 열지 못했습니다.'),
-                              ),
-                            );
-                          },
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: HomeHeader(
+                      onNotifications: () => _comingSoon(
+                        context,
+                        '알림',
+                        Icons.notifications_none_rounded,
+                      ),
+                      onProfile: () => _comingSoon(
+                        context,
+                        '마이',
+                        Icons.person_outline_rounded,
+                      ),
                     ),
+                  ),
+                  const SizedBox(height: 28),
+                  DutyCalendarCard(
+                    onManage: () => _comingSoon(
+                      context,
+                      '내 듀티 관리',
+                      Icons.calendar_month_rounded,
+                    ),
+                    onSettings: () =>
+                        _comingSoon(context, '듀티 설정', Icons.settings_outlined),
+                  ),
+                  const SizedBox(height: 30),
+                  const _SectionHeading(
+                    icon: Icons.auto_awesome_rounded,
+                    title: '주요 기능',
+                  ),
+                  const SizedBox(height: 18),
+                  _FeatureGrid(
+                    memoRepository: memoRepository,
+                    onOpen: (screen) => _open(context, screen),
+                    onComingSoon: (title, icon) =>
+                        _comingSoon(context, title, icon),
+                  ),
+                  const SizedBox(height: 26),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      if (constraints.maxWidth >= 720) {
+                        return SizedBox(
+                          height: 230,
+                          child: HomeQuickSectionsWide(
+                            onDropCalculation: () => _open(
+                              context,
+                              const InfusionSpeedCheckScreen(),
+                            ),
+                            onCcPerHour: () => _open(
+                              context,
+                              const InfusionCalculatorScreen(),
+                            ),
+                            onBmi: () => _comingSoon(
+                              context,
+                              'BMI 계산',
+                              Icons.monitor_weight_outlined,
+                            ),
+                            onOther: () => _comingSoon(
+                              context,
+                              '기타 계산',
+                              Icons.grid_view_rounded,
+                            ),
+                          ),
+                        );
+                      }
+                      return HomeQuickSections(
+                        onDropCalculation: () =>
+                            _open(context, const InfusionSpeedCheckScreen()),
+                        onCcPerHour: () =>
+                            _open(context, const InfusionCalculatorScreen()),
+                        onBmi: () => _comingSoon(
+                          context,
+                          'BMI 계산',
+                          Icons.monitor_weight_outlined,
+                        ),
+                        onOther: () => _comingSoon(
+                          context,
+                          '기타 계산',
+                          Icons.grid_view_rounded,
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -125,93 +156,140 @@ class MainMenuScreen extends StatelessWidget {
   }
 }
 
-class _MenuCard extends StatelessWidget {
-  const _MenuCard({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.onTap,
+class _FeatureGrid extends StatelessWidget {
+  const _FeatureGrid({
+    required this.memoRepository,
+    required this.onOpen,
+    required this.onComingSoon,
   });
 
-  final IconData icon;
-  final String title;
-  final String description;
-  final VoidCallback onTap;
+  final MemoRepository? memoRepository;
+  final ValueChanged<Widget> onOpen;
+  final void Function(String, IconData) onComingSoon;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFDCE6F0)),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x0A17324D),
-                blurRadius: 18,
-                offset: Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEAF2FD),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Icon(
-                  icon,
-                  color: Theme.of(context).colorScheme.primary,
-                  size: 27,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 5),
-                    Text(
-                      description,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(Icons.chevron_right_rounded, color: Color(0xFF7D90A3)),
-            ],
-          ),
+    final cards = <Widget>[
+      HomeFeatureCard(
+        key: const Key('infusionCalculatorMenu'),
+        icon: Icons.bloodtype_outlined,
+        secondaryIcon: Icons.water_drop_rounded,
+        illustration: const HomeIllustration(column: 0, row: 0),
+        title: '수액속도 계산',
+        description: '수액, 주입 속도\n쉽고 빠르게 계산',
+        background: const Color(0xFFF1FBFA),
+        accent: const Color(0xFF24A994),
+        onTap: () => onOpen(const InfusionCalculatorScreen()),
+      ),
+      HomeFeatureCard(
+        key: const Key('drainagePatternMenu'),
+        icon: Icons.water_outlined,
+        secondaryIcon: Icons.medical_services_outlined,
+        illustration: const HomeIllustration(column: 1, row: 0),
+        title: '배액양상',
+        description: '배액의 특성 및 관리\n기록을 도와드려요',
+        background: const Color(0xFFF1F7FF),
+        accent: const Color(0xFF438DDD),
+        onTap: () => onComingSoon('배액양상', Icons.water_outlined),
+      ),
+      HomeFeatureCard(
+        key: const Key('dutyChecklistMenu'),
+        icon: Icons.assignment_turned_in_outlined,
+        illustration: const HomeIllustration(column: 2, row: 0),
+        title: '듀티별 체크리스트',
+        description: '듀티에 맞는 중요한\n업무를 챙겨보세요',
+        background: const Color(0xFFF7F3FF),
+        accent: const Color(0xFF7952CE),
+        onTap: () =>
+            onComingSoon('듀티별 체크리스트', Icons.assignment_turned_in_outlined),
+      ),
+      Link(
+        uri: kKpicDrugSearchUri,
+        target: LinkTarget.self,
+        builder: (context, followLink) => HomeFeatureCard(
+          key: const Key('drugSearchMenu'),
+          icon: Icons.medication_outlined,
+          secondaryIcon: Icons.circle_outlined,
+          illustration: const HomeIllustration(column: 0, row: 1),
+          title: '약 검색',
+          description: '약물 정보, 효능, 용법을\n빠르게 검색',
+          background: const Color(0xFFFFF2F6),
+          accent: const Color(0xFFF04478),
+          onTap:
+              followLink ??
+              () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('약학정보원 페이지를 열지 못했습니다.')),
+                );
+              },
         ),
       ),
+      HomeFeatureCard(
+        key: const Key('diseaseSearchMenu'),
+        icon: Icons.menu_book_outlined,
+        secondaryIcon: Icons.search_rounded,
+        illustration: const HomeIllustration(column: 1, row: 1),
+        title: '질환별 검색',
+        description: '질환 정보와 간호 중재를\n한눈에 확인',
+        background: const Color(0xFFFFF8EC),
+        accent: const Color(0xFFF3A32F),
+        onTap: () => onComingSoon('질환별 검색', Icons.menu_book_outlined),
+      ),
+      HomeFeatureCard(
+        key: const Key('memoMenu'),
+        icon: Icons.edit_note_rounded,
+        illustration: const HomeIllustration(column: 2, row: 1),
+        title: '메모장',
+        description: '간호 중 필요한 내용을\n자유롭게 메모',
+        background: const Color(0xFFF0FAFC),
+        accent: const Color(0xFF25A5AE),
+        onTap: () => onOpen(MemoListScreen(repository: memoRepository)),
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 760 ? 3 : 2;
+        final ratio = columns == 3 ? 0.88 : 0.72;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: cards.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            childAspectRatio: ratio,
+          ),
+          itemBuilder: (context, index) => cards[index],
+        );
+      },
     );
   }
 }
 
-class _BrandMark extends StatelessWidget {
-  const _BrandMark();
+class _SectionHeading extends StatelessWidget {
+  const _SectionHeading({required this.icon, required this.title});
+
+  final IconData icon;
+  final String title;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 34,
-      height: 34,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Icon(Icons.add_rounded, color: Colors.white, size: 23),
+    return Row(
+      children: [
+        Icon(icon, color: const Color(0xFF7564D4), size: 26),
+        const SizedBox(width: 9),
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFF242539),
+            fontSize: 23,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.6,
+          ),
+        ),
+      ],
     );
   }
 }
