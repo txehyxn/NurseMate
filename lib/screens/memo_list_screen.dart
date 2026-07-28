@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../models/memo.dart';
 import '../repositories/memo_repository.dart';
+import '../widgets/highlighted_memo_text.dart';
 import 'memo_editor_screen.dart';
 
 class MemoListScreen extends StatefulWidget {
-  const MemoListScreen({super.key, this.repository});
+  const MemoListScreen({super.key, this.repository, this.photoPicker});
 
   final MemoRepository? repository;
+  final MemoPhotoPicker? photoPicker;
 
   @override
   State<MemoListScreen> createState() => _MemoListScreenState();
@@ -65,7 +67,11 @@ class _MemoListScreenState extends State<MemoListScreen> {
     if (repository == null) return;
     final didChange = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
-        builder: (_) => MemoEditorScreen(repository: repository, memo: memo),
+        builder: (_) => MemoEditorScreen(
+          repository: repository,
+          memo: memo,
+          photoPicker: widget.photoPicker ?? pickMemoPhotoFromGallery,
+        ),
       ),
     );
     if (didChange == true) {
@@ -148,47 +154,89 @@ class _MemoListScreenState extends State<MemoListScreen> {
       itemCount: memos.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
-        final memo = memos[index];
-        return Card(
-          key: Key('memoCard_${memo.id}'),
-          elevation: 0,
-          color: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Color(0xFFDCE6F0)),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: () => _openEditor(memo),
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    memo.title.isEmpty ? '제목 없음' : memo.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 7),
-                  Text(
-                    memo.content.isEmpty ? '내용 없음' : memo.content,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _formatDateTime(memo.updatedAt),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
+        return _MemoCard(memo: memos[index], onTap: _openEditor);
       },
+    );
+  }
+}
+
+class _MemoCard extends StatelessWidget {
+  const _MemoCard({required this.memo, required this.onTap});
+
+  final Memo memo;
+  final ValueChanged<Memo> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      key: Key('memoCard_${memo.id}'),
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Color(0xFFDCE6F0)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => onTap(memo),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      memo.title.isEmpty ? '제목 없음' : memo.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 7),
+                    HighlightedMemoText(
+                      text: memo.content.isEmpty ? '내용 없음' : memo.content,
+                      highlights: memo.content.isEmpty
+                          ? const []
+                          : memo.highlights,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      _formatDateTime(memo.updatedAt),
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              if (memo.photos.isNotEmpty) ...[
+                const SizedBox(width: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.memory(
+                    memo.photos.first.bytes,
+                    key: Key('memoCardPhoto_${memo.id}'),
+                    width: 82,
+                    height: 82,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => const SizedBox(
+                      width: 82,
+                      height: 82,
+                      child: ColoredBox(
+                        color: Color(0xFFF0F3F7),
+                        child: Icon(Icons.broken_image_outlined),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

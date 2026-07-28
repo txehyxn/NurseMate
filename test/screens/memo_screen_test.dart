@@ -1,8 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:nursemate/controllers/highlighting_text_editing_controller.dart';
 import 'package:nursemate/models/memo.dart';
 import 'package:nursemate/repositories/memo_repository.dart';
 import 'package:nursemate/screens/main_menu_screen.dart';
+import 'package:nursemate/screens/memo_editor_screen.dart';
 import 'package:nursemate/screens/memo_list_screen.dart';
 
 void main() {
@@ -146,14 +150,130 @@ void main() {
     expect(find.byKey(const Key('memoCard_memo-infusion')), findsNothing);
     expect(find.byKey(const Key('memoCard_memo-round')), findsOneWidget);
   });
+
+  testWidgets('선택한 사진을 메모에서 바로 보여주고 저장한다', (tester) async {
+    final repository = _MemoryMemoRepository();
+    const photo = MemoPhoto(
+      id: 'photo-1',
+      mimeType: 'image/png',
+      base64Data:
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk'
+          '+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    );
+    await _pumpMemoList(tester, repository, photoPicker: () async => photo);
+
+    await tester.tap(find.byKey(const Key('addMemoButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('addMemoPhotoButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('memoPhoto_photo-1')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('saveMemoButton')));
+    await tester.pumpAndSettle();
+
+    expect(repository.memos.single.photos, [photo]);
+    expect(
+      find.byKey(Key('memoCardPhoto_${repository.memos.single.id}')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('선택한 본문에 형광펜을 적용하고 다시 열어도 유지한다', (tester) async {
+    final repository = _MemoryMemoRepository();
+    await _pumpMemoList(tester, repository);
+
+    await tester.tap(find.byKey(const Key('addMemoButton')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const Key('memoContentField')),
+      '투약 전 알레르기를 확인한다.',
+    );
+
+    final field = tester.widget<TextField>(
+      find.byKey(const Key('memoContentField')),
+    );
+    final controller = field.controller! as HighlightingTextEditingController;
+    controller.selection = const TextSelection(baseOffset: 0, extentOffset: 12);
+    await tester.tap(find.byKey(const Key('applyMemoHighlightButton')));
+    await tester.pump();
+
+    expect(controller.highlights, [const MemoHighlight(start: 0, end: 12)]);
+    final highlightedSpan = controller.buildTextSpan(
+      context: tester.element(find.byKey(const Key('memoContentField'))),
+      style: const TextStyle(),
+      withComposing: true,
+    );
+    expect(
+      highlightedSpan.children!.first.style!.backgroundColor,
+      HighlightingTextEditingController.highlightColor,
+    );
+
+    await tester.tap(find.byKey(const Key('saveMemoButton')));
+    await tester.pumpAndSettle();
+    expect(repository.memos.single.highlights, [
+      const MemoHighlight(start: 0, end: 12),
+    ]);
+
+    await tester.tap(find.byKey(Key('memoCard_${repository.memos.single.id}')));
+    await tester.pumpAndSettle();
+    final reopenedField = tester.widget<TextField>(
+      find.byKey(const Key('memoContentField')),
+    );
+    final reopenedController =
+        reopenedField.controller! as HighlightingTextEditingController;
+    expect(reopenedController.highlights, [
+      const MemoHighlight(start: 0, end: 12),
+    ]);
+  });
+
+  test('기존 저장 데이터는 사진과 형광펜 없이도 정상 복원된다', () {
+    final memo = Memo.fromJson({
+      'id': 'legacy',
+      'title': '기존 메모',
+      'content': '기존 내용',
+      'createdAt': '2026-07-28T10:00:00.000',
+      'updatedAt': '2026-07-28T11:00:00.000',
+    });
+
+    expect(memo.photos, isEmpty);
+    expect(memo.highlights, isEmpty);
+  });
+
+  test('사진과 형광펜 데이터가 JSON 저장 후 그대로 복원된다', () {
+    const photo = MemoPhoto(
+      id: 'photo-json',
+      base64Data: 'AQID',
+      mimeType: 'image/jpeg',
+    );
+    final original = Memo(
+      id: 'memo-json',
+      title: '저장 테스트',
+      content: '중요한 내용',
+      createdAt: DateTime(2026, 7, 28, 10),
+      updatedAt: DateTime(2026, 7, 28, 11),
+      highlights: const [MemoHighlight(start: 0, end: 3)],
+      photos: const [photo],
+    );
+
+    final decoded = (jsonDecode(jsonEncode(original.toJson())) as Map)
+        .cast<String, Object?>();
+    final restored = Memo.fromJson(decoded);
+
+    expect(restored.highlights, original.highlights);
+    expect(restored.photos, original.photos);
+  });
 }
 
 Future<void> _pumpMemoList(
   WidgetTester tester,
-  MemoRepository repository,
-) async {
+  MemoRepository repository, {
+  MemoPhotoPicker? photoPicker,
+}) async {
   await tester.pumpWidget(
-    MaterialApp(home: MemoListScreen(repository: repository)),
+    MaterialApp(
+      home: MemoListScreen(repository: repository, photoPicker: photoPicker),
+    ),
   );
   await tester.pumpAndSettle();
 }
