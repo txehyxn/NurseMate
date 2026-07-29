@@ -22,7 +22,6 @@ import '../widgets/home/home_quick_sections.dart';
 import 'appearance_screen.dart';
 import 'coming_soon_screen.dart';
 import 'dday_setting_screen.dart';
-import 'disease_encyclopedia_screen.dart';
 import 'duty_day_sheet.dart';
 import 'duty_manage_screen.dart';
 import 'infusion_calculator_screen.dart';
@@ -33,6 +32,12 @@ import 'my_page_screen.dart';
 final Uri kKpicDrugSearchUri = Uri.parse(
   'https://health.kr/searchDrug/search_detail.asp',
 );
+final Uri kAsanDiseaseEncyclopediaUri = Uri.parse(
+  'https://www.amc.seoul.kr/asan/main.do',
+);
+
+typedef ExternalUrlLauncher =
+    Future<bool> Function(Uri uri, LaunchMode mode);
 
 class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({
@@ -46,7 +51,7 @@ class MainMenuScreen extends StatefulWidget {
     this.dDayToday,
     this.initialDDaySetting,
     this.dutyScheduleService,
-    this.diseaseWebViewClient,
+    this.diseaseUrlLauncher,
   });
 
   final MemoRepository? memoRepository;
@@ -58,7 +63,7 @@ class MainMenuScreen extends StatefulWidget {
   final DateTime? dDayToday;
   final DDaySetting? initialDDaySetting;
   final DutyScheduleService? dutyScheduleService;
-  final DiseaseWebViewClient? diseaseWebViewClient;
+  final ExternalUrlLauncher? diseaseUrlLauncher;
 
   @override
   State<MainMenuScreen> createState() => _MainMenuScreenState();
@@ -217,6 +222,21 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     }
   }
 
+  Future<void> _openDiseaseEncyclopedia() async {
+    final launcher =
+        widget.diseaseUrlLauncher ??
+        (uri, mode) => launchUrl(uri, mode: mode);
+    if (!await launcher(
+          kAsanDiseaseEncyclopediaUri,
+          LaunchMode.externalApplication,
+        ) &&
+        mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('질환백과 페이지를 열지 못했습니다.')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -267,7 +287,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                   const SizedBox(height: 18),
                   _FeatureGrid(
                     memoRepository: _memoRepository,
-                    diseaseWebViewClient: widget.diseaseWebViewClient,
+                    onDiseaseSearch: _openDiseaseEncyclopedia,
                     onOpen: _open,
                     onComingSoon: _comingSoon,
                   ),
@@ -324,13 +344,13 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 class _FeatureGrid extends StatelessWidget {
   const _FeatureGrid({
     required this.memoRepository,
-    required this.diseaseWebViewClient,
+    required this.onDiseaseSearch,
     required this.onOpen,
     required this.onComingSoon,
   });
 
   final MemoRepository? memoRepository;
-  final DiseaseWebViewClient? diseaseWebViewClient;
+  final VoidCallback onDiseaseSearch;
   final ValueChanged<Widget> onOpen;
   final void Function(String, IconData) onComingSoon;
 
@@ -400,9 +420,7 @@ class _FeatureGrid extends StatelessWidget {
         description: '질환 정보와 간호 중재를\n한눈에 확인',
         background: const Color(0xFFFFF8EC),
         accent: const Color(0xFFF3A32F),
-        onTap: () => onOpen(
-          DiseaseEncyclopediaScreen(webViewClient: diseaseWebViewClient),
-        ),
+        onTap: onDiseaseSearch,
       ),
       HomeFeatureCard(
         key: const Key('memoMenu'),
