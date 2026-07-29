@@ -14,6 +14,7 @@ import '../widgets/home/home_feature_card.dart';
 import '../widgets/home/home_header.dart';
 import '../widgets/home/home_illustration.dart';
 import '../widgets/home/home_quick_sections.dart';
+import 'appearance_screen.dart';
 import 'coming_soon_screen.dart';
 import 'duty_manage_screen.dart';
 import 'infusion_calculator_screen.dart';
@@ -248,7 +249,7 @@ class _FeatureGrid extends StatelessWidget {
         description: '배액의 특성 및 관리\n기록을 도와드려요',
         background: const Color(0xFFF1F7FF),
         accent: const Color(0xFF438DDD),
-        onTap: () => onComingSoon('배액양상', Icons.water_outlined),
+        onTap: () => onOpen(const AppearanceScreen()),
       ),
       HomeFeatureCard(
         key: const Key('dutyChecklistMenu'),

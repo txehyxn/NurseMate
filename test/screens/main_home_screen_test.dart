@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nursemate/models/duty_type.dart';
 import 'package:nursemate/repositories/duty_repository.dart';
-import 'package:nursemate/screens/coming_soon_screen.dart';
+import 'package:nursemate/screens/appearance_screen.dart';
 import 'package:nursemate/screens/main_menu_screen.dart';
 
 void main() {
@@ -43,7 +43,7 @@ void main() {
     expect(find.text('마이'), findsOneWidget);
   });
 
-  testWidgets('미구현 주요 기능은 준비중 화면으로 연결한다', (tester) async {
+  testWidgets('배액양상 메뉴는 배액 양상 화면으로 연결한다', (tester) async {
     await tester.pumpWidget(
       MaterialApp(home: MainMenuScreen(dutyRepository: _EmptyDutyRepository())),
     );
@@ -55,8 +55,9 @@ void main() {
     action.onTap!();
     await tester.pumpAndSettle();
 
-    expect(find.byType(ComingSoonScreen), findsOneWidget);
-    expect(find.text('배액양상 준비 중'), findsOneWidget);
+    expect(find.byType(AppearanceScreen), findsOneWidget);
+    expect(find.text('배액 양상'), findsOneWidget);
+    expect(find.text('배액관 양상'), findsNWidgets(2));
   });
 
   testWidgets('모바일에서도 주요 기능은 3열 2행이고 빠른 계산과 D-Day가 같은 줄이다', (tester) async {
