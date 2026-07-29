@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nursemate/design_system/nursemate_theme.dart';
 import 'package:nursemate/screens/intake_calculator_screen.dart';
+import 'package:nursemate/screens/non_covered_test_screen.dart';
 import 'package:nursemate/screens/quick_calculation_more_screen.dart';
 import 'package:nursemate/screens/quick_menu_placeholder_screen.dart';
 
@@ -124,7 +125,6 @@ void main() {
     for (final entry in const {
       'quickMore-ast': 'AST(항생제)',
       'quickMore-phone': '병원 전화번호',
-      'quickMore-nonCoveredTest': '비급여 검사',
       'quickMore-bloodTest': '혈액 검사',
     }.entries) {
       final menu = find.byKey(Key(entry.key));
@@ -140,6 +140,27 @@ void main() {
       await tester.pageBack();
       await tester.pumpAndSettle();
     }
+  });
+
+  testWidgets('비급여 검사 메뉴는 카테고리 화면으로 연결한다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(430, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: NurseMateTheme.light(),
+        home: const QuickCalculationMoreScreen(),
+      ),
+    );
+
+    final menu = find.byKey(const Key('quickMore-nonCoveredTest'));
+    await tester.ensureVisible(menu);
+    await tester.tap(menu);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NonCoveredTestScreen), findsOneWidget);
+    expect(find.text('검사명을 검색하세요'), findsOneWidget);
+    expect(find.byKey(const Key('nonCoveredCategory-mri')), findsOneWidget);
   });
 
   testWidgets('기존 섭취량 계산기 연결은 유지한다', (tester) async {

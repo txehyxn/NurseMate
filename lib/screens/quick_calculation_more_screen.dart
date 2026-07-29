@@ -4,6 +4,7 @@ import '../design_system/nursemate_design_system.dart';
 import 'infusion_calculator_screen.dart';
 import 'infusion_speed_check_screen.dart';
 import 'intake_calculator_screen.dart';
+import 'non_covered_test_screen.dart';
 import 'quick_menu_placeholder_screen.dart';
 
 class QuickCalculationMoreScreen extends StatelessWidget {
@@ -70,13 +71,7 @@ class QuickCalculationMoreScreen extends StatelessWidget {
         icon: Icons.science_rounded,
         title: '비급여 검사',
         subtitle: '검사/비용',
-        onTap: () => _open(
-          context,
-          const QuickMenuPlaceholderScreen(
-            title: '비급여 검사',
-            icon: Icons.science_rounded,
-          ),
-        ),
+        onTap: () => _open(context, const NonCoveredTestScreen()),
       ),
       _QuickMenuItem(
         key: 'quickMore-phone',
