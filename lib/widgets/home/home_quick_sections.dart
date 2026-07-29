@@ -199,9 +199,10 @@ class _QuickCalculationCard extends StatelessWidget {
               ),
               Expanded(
                 child: _QuickItem(
-                  icon: Icons.dialpad_rounded,
-                  title: '기타 계산',
-                  caption: '다양한 계산',
+                  key: const Key('intakeCalculatorMenu'),
+                  icon: Icons.restaurant_menu_rounded,
+                  title: '섭취량 계산기',
+                  caption: '식사 섭취량',
                   onTap: onOther,
                   compact: compact,
                 ),

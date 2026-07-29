@@ -4,6 +4,7 @@ import 'package:nursemate/models/duty_type.dart';
 import 'package:nursemate/models/dday_setting.dart';
 import 'package:nursemate/repositories/duty_repository.dart';
 import 'package:nursemate/screens/appearance_screen.dart';
+import 'package:nursemate/screens/intake_calculator_screen.dart';
 import 'package:nursemate/screens/main_menu_screen.dart';
 import 'package:nursemate/services/dday_settings_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -61,6 +62,35 @@ void main() {
     expect(find.byType(AppearanceScreen), findsOneWidget);
     expect(find.text('배액 양상'), findsOneWidget);
     expect(find.text('배액관 양상'), findsNWidgets(2));
+  });
+
+  testWidgets('기타 계산 메뉴를 섭취량 계산기로 표시하고 연결한다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(490, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(home: MainMenuScreen(dutyRepository: _EmptyDutyRepository())),
+    );
+    await tester.pump();
+
+    final menu = find.byKey(const Key('intakeCalculatorMenu'));
+    await tester.ensureVisible(menu);
+    await tester.pumpAndSettle();
+
+    expect(find.text('섭취량 계산기'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: menu,
+        matching: find.byIcon(Icons.restaurant_menu_rounded),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(menu);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(IntakeCalculatorScreen), findsOneWidget);
+    expect(find.text('총 섭취량'), findsOneWidget);
   });
 
   testWidgets('모바일에서도 주요 기능은 3열 2행이고 빠른 계산과 D-Day가 같은 줄이다', (tester) async {

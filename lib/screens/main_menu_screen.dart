@@ -28,6 +28,7 @@ import 'duty_day_sheet.dart';
 import 'duty_manage_screen.dart';
 import 'infusion_calculator_screen.dart';
 import 'infusion_speed_check_screen.dart';
+import 'intake_calculator_screen.dart';
 import 'memo_list_screen.dart';
 import 'my_page_screen.dart';
 
@@ -316,7 +317,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                               Icons.monitor_weight_outlined,
                             ),
                             onOther: () =>
-                                _comingSoon('기타 계산', Icons.grid_view_rounded),
+                                _open(const IntakeCalculatorScreen()),
                             dDaySetting: _dDaySetting,
                             dDayToday: _dDayToday,
                             onDDayTap: _openDDaySettings,
@@ -332,8 +333,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                           'BMI 계산',
                           Icons.monitor_weight_outlined,
                         ),
-                        onOther: () =>
-                            _comingSoon('기타 계산', Icons.grid_view_rounded),
+                        onOther: () => _open(const IntakeCalculatorScreen()),
                         dDaySetting: _dDaySetting,
                         dDayToday: _dDayToday,
                         onDDayTap: _openDDaySettings,
