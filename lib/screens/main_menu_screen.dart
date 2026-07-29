@@ -31,6 +31,8 @@ import 'infusion_speed_check_screen.dart';
 import 'intake_calculator_screen.dart';
 import 'memo_list_screen.dart';
 import 'my_page_screen.dart';
+import 'quick_calculation_more_screen.dart';
+import 'quick_menu_placeholder_screen.dart';
 
 final Uri kKpicDrugSearchUri = Uri.parse(
   'https://health.kr/searchDrug/search_detail.asp',
@@ -312,12 +314,16 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                                 _open(const InfusionSpeedCheckScreen()),
                             onCcPerHour: () =>
                                 _open(const InfusionCalculatorScreen()),
-                            onBmi: () => _comingSoon(
-                              'BMI 계산',
-                              Icons.monitor_weight_outlined,
+                            onAst: () => _open(
+                              const QuickMenuPlaceholderScreen(
+                                title: 'AST(항생제)',
+                                icon: Icons.medication_rounded,
+                              ),
                             ),
                             onOther: () =>
                                 _open(const IntakeCalculatorScreen()),
+                            onMore: () =>
+                                _open(const QuickCalculationMoreScreen()),
                             dDaySetting: _dDaySetting,
                             dDayToday: _dDayToday,
                             onDDayTap: _openDDaySettings,
@@ -329,11 +335,14 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                             _open(const InfusionSpeedCheckScreen()),
                         onCcPerHour: () =>
                             _open(const InfusionCalculatorScreen()),
-                        onBmi: () => _comingSoon(
-                          'BMI 계산',
-                          Icons.monitor_weight_outlined,
+                        onAst: () => _open(
+                          const QuickMenuPlaceholderScreen(
+                            title: 'AST(항생제)',
+                            icon: Icons.medication_rounded,
+                          ),
                         ),
                         onOther: () => _open(const IntakeCalculatorScreen()),
+                        onMore: () => _open(const QuickCalculationMoreScreen()),
                         dDaySetting: _dDaySetting,
                         dDayToday: _dDayToday,
                         onDDayTap: _openDDaySettings,

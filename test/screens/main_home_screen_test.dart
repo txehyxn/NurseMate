@@ -6,6 +6,8 @@ import 'package:nursemate/repositories/duty_repository.dart';
 import 'package:nursemate/screens/appearance_screen.dart';
 import 'package:nursemate/screens/intake_calculator_screen.dart';
 import 'package:nursemate/screens/main_menu_screen.dart';
+import 'package:nursemate/screens/quick_calculation_more_screen.dart';
+import 'package:nursemate/screens/quick_menu_placeholder_screen.dart';
 import 'package:nursemate/services/dday_settings_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -39,12 +41,45 @@ void main() {
     expect(find.byKey(const Key('memoMenu')), findsOneWidget);
 
     expect(find.text('빠른 계산'), findsOneWidget);
+    expect(find.text('BMI 계산'), findsNothing);
+    expect(find.text('AST(항생제)'), findsOneWidget);
     expect(find.text('D-Day'), findsOneWidget);
     expect(find.text('홈'), findsOneWidget);
     expect(find.text('계산'), findsOneWidget);
     expect(find.text('기록'), findsOneWidget);
     expect(find.text('지식'), findsOneWidget);
     expect(find.text('마이'), findsOneWidget);
+  });
+
+  testWidgets('AST와 빠른 계산 더보기 화면으로 연결한다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(490, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(home: MainMenuScreen(dutyRepository: _EmptyDutyRepository())),
+    );
+    await tester.pump();
+
+    final ast = find.byKey(const Key('astQuickMenu'));
+    await tester.ensureVisible(ast);
+    await tester.tap(ast);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(QuickMenuPlaceholderScreen), findsOneWidget);
+    expect(find.text('준비 중입니다.'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    final more = find.byKey(const Key('quickCalculationMoreButton'));
+    await tester.ensureVisible(more);
+    await tester.tap(more);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(QuickCalculationMoreScreen), findsOneWidget);
+    expect(find.text('병원 전화번호'), findsOneWidget);
+    expect(find.text('비급여 검사'), findsOneWidget);
+    expect(find.text('혈액 검사'), findsOneWidget);
   });
 
   testWidgets('배액양상 메뉴는 배액 양상 화면으로 연결한다', (tester) async {

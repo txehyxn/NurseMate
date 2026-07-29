@@ -7,8 +7,9 @@ class HomeQuickSections extends StatelessWidget {
     super.key,
     required this.onDropCalculation,
     required this.onCcPerHour,
-    required this.onBmi,
+    required this.onAst,
     required this.onOther,
+    required this.onMore,
     required this.dDaySetting,
     required this.dDayToday,
     required this.onDDayTap,
@@ -16,8 +17,9 @@ class HomeQuickSections extends StatelessWidget {
 
   final VoidCallback onDropCalculation;
   final VoidCallback onCcPerHour;
-  final VoidCallback onBmi;
+  final VoidCallback onAst;
   final VoidCallback onOther;
+  final VoidCallback onMore;
   final DDaySetting dDaySetting;
   final DateTime dDayToday;
   final VoidCallback onDDayTap;
@@ -30,8 +32,9 @@ class HomeQuickSections extends StatelessWidget {
         final quick = _QuickCalculationCard(
           onDropCalculation: onDropCalculation,
           onCcPerHour: onCcPerHour,
-          onBmi: onBmi,
+          onAst: onAst,
           onOther: onOther,
+          onMore: onMore,
           compact: !stacked,
         );
         final dDay = DDayCard(
@@ -64,8 +67,9 @@ class HomeQuickSectionsWide extends StatelessWidget {
     super.key,
     required this.onDropCalculation,
     required this.onCcPerHour,
-    required this.onBmi,
+    required this.onAst,
     required this.onOther,
+    required this.onMore,
     required this.dDaySetting,
     required this.dDayToday,
     required this.onDDayTap,
@@ -73,8 +77,9 @@ class HomeQuickSectionsWide extends StatelessWidget {
 
   final VoidCallback onDropCalculation;
   final VoidCallback onCcPerHour;
-  final VoidCallback onBmi;
+  final VoidCallback onAst;
   final VoidCallback onOther;
+  final VoidCallback onMore;
   final DDaySetting dDaySetting;
   final DateTime dDayToday;
   final VoidCallback onDDayTap;
@@ -89,8 +94,9 @@ class HomeQuickSectionsWide extends StatelessWidget {
           child: _QuickCalculationCard(
             onDropCalculation: onDropCalculation,
             onCcPerHour: onCcPerHour,
-            onBmi: onBmi,
+            onAst: onAst,
             onOther: onOther,
+            onMore: onMore,
             compact: false,
           ),
         ),
@@ -113,15 +119,17 @@ class _QuickCalculationCard extends StatelessWidget {
   const _QuickCalculationCard({
     required this.onDropCalculation,
     required this.onCcPerHour,
-    required this.onBmi,
+    required this.onAst,
     required this.onOther,
+    required this.onMore,
     required this.compact,
   });
 
   final VoidCallback onDropCalculation;
   final VoidCallback onCcPerHour;
-  final VoidCallback onBmi;
+  final VoidCallback onAst;
   final VoidCallback onOther;
+  final VoidCallback onMore;
   final bool compact;
 
   @override
@@ -153,17 +161,27 @@ class _QuickCalculationCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              if (!compact)
-                Text(
-                  '더보기  ›',
-                  style: TextStyle(
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? colors.onSurfaceVariant
-                        : const Color(0xFF898A9B),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
+              InkWell(
+                key: const Key('quickCalculationMoreButton'),
+                onTap: onMore,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 6,
+                  ),
+                  child: Text(
+                    '더보기  ›',
+                    style: TextStyle(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? colors.onSurfaceVariant
+                          : const Color(0xFF898A9B),
+                      fontSize: compact ? 10 : 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
+              ),
             ],
           ),
           SizedBox(height: compact ? 10 : 18),
@@ -190,10 +208,11 @@ class _QuickCalculationCard extends StatelessWidget {
               ),
               Expanded(
                 child: _QuickItem(
-                  icon: Icons.person_rounded,
-                  title: 'BMI 계산',
-                  caption: '체질량지수',
-                  onTap: onBmi,
+                  key: const Key('astQuickMenu'),
+                  icon: Icons.medication_rounded,
+                  title: 'AST(항생제)',
+                  caption: '항생제 정보',
+                  onTap: onAst,
                   compact: compact,
                 ),
               ),
