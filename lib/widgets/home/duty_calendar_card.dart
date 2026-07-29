@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../design_system/nursemate_design_system.dart';
 import '../../models/duty_calendar_day.dart';
+import '../../models/duty_schedule.dart';
 import '../../models/duty_type.dart';
 
 class DutyCalendarCard extends StatelessWidget {
@@ -9,6 +10,7 @@ class DutyCalendarCard extends StatelessWidget {
     super.key,
     required this.month,
     required this.duties,
+    this.schedules = const {},
     required this.onPreviousMonth,
     required this.onNextMonth,
     required this.onManage,
@@ -20,6 +22,7 @@ class DutyCalendarCard extends StatelessWidget {
 
   final DateTime month;
   final Map<String, DutyType> duties;
+  final Map<String, DutyDaySchedule> schedules;
   final VoidCallback onPreviousMonth;
   final VoidCallback onNextMonth;
   final VoidCallback onManage;
@@ -51,6 +54,7 @@ class DutyCalendarCard extends StatelessWidget {
               DutyCalendarGrid(
                 month: month,
                 duties: duties,
+                schedules: schedules,
                 today: today ?? DateTime.now(),
                 onDateTap: onDateTap,
               ),
@@ -226,18 +230,24 @@ class DutyCalendarGrid extends StatelessWidget {
     super.key,
     required this.month,
     required this.duties,
+    this.schedules = const {},
     required this.today,
     this.onDateTap,
   });
 
   final DateTime month;
   final Map<String, DutyType> duties;
+  final Map<String, DutyDaySchedule> schedules;
   final DateTime today;
   final ValueChanged<DateTime>? onDateTap;
 
   @override
   Widget build(BuildContext context) {
-    final days = buildDutyCalendarDays(month: month, duties: duties);
+    final days = buildDutyCalendarDays(
+      month: month,
+      duties: duties,
+      schedules: schedules,
+    );
     return Column(
       children: [
         const _WeekdayHeader(),
@@ -255,7 +265,7 @@ class DutyCalendarGrid extends StatelessWidget {
                 itemCount: days.length,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: DateTime.daysPerWeek,
-                  childAspectRatio: compact ? 0.72 : 1.12,
+                  childAspectRatio: compact ? 0.58 : 1,
                 ),
                 itemBuilder: (context, index) {
                   return DutyDayCell(
@@ -263,6 +273,7 @@ class DutyCalendarGrid extends StatelessWidget {
                     day: days[index],
                     weekday: index % DateTime.daysPerWeek,
                     isToday: days[index].isSameDate(today),
+                    dense: compact,
                     onTap: onDateTap == null
                         ? null
                         : () => onDateTap!(days[index].date),
@@ -312,12 +323,14 @@ class DutyDayCell extends StatelessWidget {
     required this.day,
     required this.weekday,
     required this.isToday,
+    this.dense = false,
     this.onTap,
   });
 
   final DutyCalendarDay day;
   final int weekday;
   final bool isToday;
+  final bool dense;
   final VoidCallback? onTap;
 
   @override
@@ -332,7 +345,7 @@ class DutyDayCell extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 3),
+        padding: EdgeInsets.symmetric(vertical: dense ? 3 : 7, horizontal: 3),
         decoration: const BoxDecoration(
           border: Border(
             top: BorderSide(color: NurseMateColors.divider),
@@ -342,8 +355,8 @@ class DutyDayCell extends StatelessWidget {
         child: Column(
           children: [
             Container(
-              width: 30,
-              height: 30,
+              width: dense ? 26 : 30,
+              height: dense ? 26 : 30,
               alignment: Alignment.center,
               decoration: isToday
                   ? const BoxDecoration(
@@ -357,12 +370,12 @@ class DutyDayCell extends StatelessWidget {
                 '${day.date.day}',
                 style: TextStyle(
                   color: isToday ? Colors.white : dateColor,
-                  fontSize: 14,
+                  fontSize: dense ? 13 : 14,
                   fontWeight: isToday ? FontWeight.w900 : FontWeight.w600,
                 ),
               ),
             ),
-            const SizedBox(height: 5),
+            SizedBox(height: dense ? 2 : 5),
             AnimatedSwitcher(
               duration: NurseMateMotion.fast,
               switchInCurve: NurseMateMotion.curve,
@@ -374,6 +387,10 @@ class DutyDayCell extends StatelessWidget {
                       compact: true,
                     ),
             ),
+            if (!day.schedule.isEmpty) ...[
+              SizedBox(height: dense ? 1 : 2),
+              _ScheduleIcons(schedule: day.schedule),
+            ],
           ],
         ),
       ),
@@ -390,13 +407,36 @@ class DutyLegend extends StatelessWidget {
       alignment: WrapAlignment.spaceEvenly,
       spacing: 18,
       runSpacing: 12,
-      children: const [
-        _LegendItem(type: DutyType.day),
-        _LegendItem(type: DutyType.evening),
-        _LegendItem(type: DutyType.night),
-        _LegendItem(type: DutyType.off),
-        _LegendItem(type: DutyType.annualLeave),
+      children: [
+        for (final type in DutyType.values) _LegendItem(type: type),
       ],
+    );
+  }
+}
+
+class _ScheduleIcons extends StatelessWidget {
+  const _ScheduleIcons({required this.schedule});
+
+  final DutyDaySchedule schedule;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: [
+        if (schedule.hasGathering) '회식',
+        if (schedule.hasAppointment) '약속',
+      ].join(', '),
+      child: ExcludeSemantics(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (schedule.hasGathering)
+              const Text('🍻', style: TextStyle(fontSize: 12, height: 1)),
+            if (schedule.hasAppointment)
+              const Text('📅', style: TextStyle(fontSize: 12, height: 1)),
+          ],
+        ),
+      ),
     );
   }
 }

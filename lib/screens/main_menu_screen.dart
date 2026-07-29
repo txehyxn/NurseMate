@@ -3,10 +3,15 @@ import 'package:url_launcher/link.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/duty_type.dart';
+import '../models/duty_calendar_day.dart';
+import '../models/duty_schedule.dart';
+import '../models/dday_setting.dart';
 import '../repositories/duty_repository.dart';
 import '../repositories/memo_repository.dart';
 import '../services/auth_service.dart';
 import '../services/cloud_service.dart';
+import '../services/dday_settings_service.dart';
+import '../services/duty_schedule_service.dart';
 import '../services/repository_service.dart';
 import '../widgets/home/duty_calendar_card.dart';
 import '../widgets/home/home_bottom_navigation.dart';
@@ -17,6 +22,8 @@ import '../widgets/home/home_quick_sections.dart';
 import 'appearance_screen.dart';
 import 'coming_soon_screen.dart';
 import 'duty_manage_screen.dart';
+import 'duty_day_sheet.dart';
+import 'dday_setting_screen.dart';
 import 'infusion_calculator_screen.dart';
 import 'infusion_speed_check_screen.dart';
 import 'memo_list_screen.dart';
@@ -34,6 +41,10 @@ class MainMenuScreen extends StatefulWidget {
     this.initialDutyMonth,
     this.dutyToday,
     this.authService,
+    this.dDaySettingsService,
+    this.dDayToday,
+    this.initialDDaySetting,
+    this.dutyScheduleService,
   });
 
   final MemoRepository? memoRepository;
@@ -41,6 +52,10 @@ class MainMenuScreen extends StatefulWidget {
   final DateTime? initialDutyMonth;
   final DateTime? dutyToday;
   final AuthService? authService;
+  final DDaySettingsService? dDaySettingsService;
+  final DateTime? dDayToday;
+  final DDaySetting? initialDDaySetting;
+  final DutyScheduleService? dutyScheduleService;
 
   @override
   State<MainMenuScreen> createState() => _MainMenuScreenState();
@@ -51,6 +66,12 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   MemoRepository? _memoRepository;
   late DateTime _dutyMonth;
   Map<String, DutyType> _duties = const {};
+  Map<String, DutyDaySchedule> _dutySchedules = const {};
+  DutyScheduleService? _dutyScheduleService;
+  DDaySettingsService? _dDaySettingsService;
+  late DDaySetting _dDaySetting;
+
+  DateTime get _dDayToday => widget.dDayToday ?? DateTime.now();
 
   @override
   void initState() {
@@ -59,27 +80,56 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     _dutyMonth = DateTime(initialMonth.year, initialMonth.month);
     _dutyRepository = widget.dutyRepository;
     _memoRepository = widget.memoRepository;
+    _dutyScheduleService = widget.dutyScheduleService;
+    _dDaySettingsService = widget.dDaySettingsService;
+    _dDaySetting =
+        widget.initialDDaySetting ?? DDaySetting.defaultFor(_dDayToday);
     _initializeRepositories();
+    if (widget.initialDDaySetting == null) {
+      _initializeDDay();
+    }
   }
 
   Future<void> _initializeRepositories() async {
     _dutyRepository ??= await RepositoryService.openDutyRepository();
     _memoRepository ??= await RepositoryService.openMemoRepository();
+    _dutyScheduleService ??= await DutyScheduleService.open();
     await _loadDuties();
+  }
+
+  Future<void> _initializeDDay() async {
+    try {
+      final service = _dDaySettingsService ?? await DDaySettingsService.open();
+      final setting = service.load(today: _dDayToday);
+      if (!mounted) return;
+      setState(() {
+        _dDaySettingsService = service;
+        _dDaySetting = setting;
+      });
+    } on Object {
+      // Local storage failures must not prevent the home screen from loading.
+    }
   }
 
   Future<void> _loadDuties() async {
     final repository = _dutyRepository;
     if (repository == null) return;
     final duties = await repository.getForMonth(_dutyMonth);
+    final schedules =
+        _dutyScheduleService?.loadMonth(_dutyMonth) ??
+        <String, DutyDaySchedule>{};
     if (!mounted) return;
-    setState(() => _duties = duties);
+    setState(() {
+      _duties = duties;
+      _dutySchedules = schedules;
+    });
   }
 
   Future<void> _moveDutyMonth(int offset) async {
     setState(() {
       _dutyMonth = DateTime(_dutyMonth.year, _dutyMonth.month + offset);
       _duties = const {};
+      _dutySchedules = const {};
     });
     await _loadDuties();
   }
@@ -93,9 +143,36 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
           repository: repository,
           initialMonth: _dutyMonth,
           today: widget.dutyToday,
+          scheduleService: _dutyScheduleService,
         ),
       ),
     );
+    await _loadDuties();
+  }
+
+  Future<void> _editDutyDay(DateTime date) async {
+    final repository = _dutyRepository;
+    final scheduleService = _dutyScheduleService;
+    if (repository == null ||
+        scheduleService == null ||
+        date.year != _dutyMonth.year ||
+        date.month != _dutyMonth.month) {
+      return;
+    }
+    final key = dutyDateKey(date);
+    final result = await showDutyDaySheet(
+      context: context,
+      date: date,
+      duty: _duties[key],
+      schedule: _dutySchedules[key] ?? const DutyDaySchedule(),
+    );
+    if (result == null) return;
+    if (result.duty == null) {
+      await repository.delete(date);
+    } else {
+      await repository.save(date, result.duty!);
+    }
+    await scheduleService.save(date, result.schedule);
     await _loadDuties();
   }
 
@@ -109,6 +186,23 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
   void _openProfile() {
     _open(MyPageScreen(authService: widget.authService ?? CloudService.auth));
+  }
+
+  Future<void> _openDDaySettings() async {
+    final service = _dDaySettingsService ?? await DDaySettingsService.open();
+    if (!mounted) return;
+    _dDaySettingsService = service;
+    final setting = await Navigator.of(context).push<DDaySetting>(
+      MaterialPageRoute<DDaySetting>(
+        builder: (_) => DDaySettingScreen(
+          initialSetting: _dDaySetting,
+          settingsService: service,
+          today: _dDayToday,
+        ),
+      ),
+    );
+    if (setting == null || !mounted) return;
+    setState(() => _dDaySetting = setting);
   }
 
   Future<void> _openDrugSearch() async {
@@ -153,12 +247,14 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                   DutyCalendarCard(
                     month: _dutyMonth,
                     duties: _duties,
+                    schedules: _dutySchedules,
                     today: widget.dutyToday,
                     onPreviousMonth: () => _moveDutyMonth(-1),
                     onNextMonth: () => _moveDutyMonth(1),
                     onManage: _openDutyManager,
                     onSettings: () =>
                         _comingSoon('듀티 설정', Icons.settings_outlined),
+                    onDateTap: _editDutyDay,
                   ),
                   const SizedBox(height: 30),
                   const _SectionHeading(
@@ -188,6 +284,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                             ),
                             onOther: () =>
                                 _comingSoon('기타 계산', Icons.grid_view_rounded),
+                            dDaySetting: _dDaySetting,
+                            dDayToday: _dDayToday,
+                            onDDayTap: _openDDaySettings,
                           ),
                         );
                       }
@@ -202,6 +301,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                         ),
                         onOther: () =>
                             _comingSoon('기타 계산', Icons.grid_view_rounded),
+                        dDaySetting: _dDaySetting,
+                        dDayToday: _dDayToday,
+                        onDDayTap: _openDDaySettings,
                       );
                     },
                   ),

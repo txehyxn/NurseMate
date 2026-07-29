@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../models/dday_setting.dart';
+
 class HomeQuickSections extends StatelessWidget {
   const HomeQuickSections({
     super.key,
@@ -7,12 +9,18 @@ class HomeQuickSections extends StatelessWidget {
     required this.onCcPerHour,
     required this.onBmi,
     required this.onOther,
+    required this.dDaySetting,
+    required this.dDayToday,
+    required this.onDDayTap,
   });
 
   final VoidCallback onDropCalculation;
   final VoidCallback onCcPerHour;
   final VoidCallback onBmi;
   final VoidCallback onOther;
+  final DDaySetting dDaySetting;
+  final DateTime dDayToday;
+  final VoidCallback onDDayTap;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +34,12 @@ class HomeQuickSections extends StatelessWidget {
           onOther: onOther,
           compact: !stacked,
         );
-        final dDay = _DDayCard(compact: !stacked);
+        final dDay = DDayCard(
+          setting: dDaySetting,
+          today: dDayToday,
+          onTap: onDDayTap,
+          compact: !stacked,
+        );
         if (stacked) {
           return Column(children: [quick, const SizedBox(height: 18), dDay]);
         }
@@ -53,12 +66,18 @@ class HomeQuickSectionsWide extends StatelessWidget {
     required this.onCcPerHour,
     required this.onBmi,
     required this.onOther,
+    required this.dDaySetting,
+    required this.dDayToday,
+    required this.onDDayTap,
   });
 
   final VoidCallback onDropCalculation;
   final VoidCallback onCcPerHour;
   final VoidCallback onBmi;
   final VoidCallback onOther;
+  final DDaySetting dDaySetting;
+  final DateTime dDayToday;
+  final VoidCallback onDDayTap;
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +95,15 @@ class HomeQuickSectionsWide extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 18),
-        const Expanded(flex: 2, child: _DDayCard(compact: false)),
+        Expanded(
+          flex: 2,
+          child: DDayCard(
+            setting: dDaySetting,
+            today: dDayToday,
+            onTap: onDDayTap,
+            compact: false,
+          ),
+        ),
       ],
     );
   }
@@ -237,17 +264,30 @@ class _QuickItem extends StatelessWidget {
   }
 }
 
-class _DDayCard extends StatelessWidget {
-  const _DDayCard({required this.compact});
+class DDayCard extends StatelessWidget {
+  const DDayCard({
+    super.key,
+    required this.setting,
+    required this.today,
+    required this.compact,
+    this.onTap,
+  });
 
+  final DDaySetting setting;
+  final DateTime today;
   final bool compact;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return _HomePanel(
       compact: compact,
-      gradient: const LinearGradient(
-        colors: [Color(0xFFF8F6FF), Color(0xFFF0EEFF)],
+      onTap: onTap,
+      gradient: LinearGradient(
+        colors: [
+          setting.cardColor.backgroundStart,
+          setting.cardColor.backgroundEnd,
+        ],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
@@ -258,39 +298,29 @@ class _DDayCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'D-Day',
+                  setting.calculationMode.label,
                   style: TextStyle(
-                    color: Color(0xFF6554C0),
+                    color: setting.cardColor.accent,
                     fontSize: compact ? 16 : 21,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
                 SizedBox(height: compact ? 10 : 18),
-                Text.rich(
-                  TextSpan(
-                    children: [
-                      TextSpan(
-                        text: '120',
-                        style: TextStyle(
-                          color: Color(0xFF25263A),
-                          fontSize: compact ? 28 : 38,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      TextSpan(
-                        text: '일',
-                        style: TextStyle(
-                          color: Color(0xFF55566A),
-                          fontSize: compact ? 11 : 14,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
+                Text(
+                  setting.counterLabel(today),
+                  maxLines: 1,
+                  style: TextStyle(
+                    color: const Color(0xFF25263A),
+                    fontSize: compact ? 28 : 38,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -1,
                   ),
                 ),
                 SizedBox(height: 5),
                 Text(
-                  '입사 후 D-Day\n오늘도 성장 중이에요! ♥',
+                  '${setting.title}\n${_formatDate(setting.date)}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: Color(0xFF696A7E),
                     fontSize: compact ? 9 : 12,
@@ -305,11 +335,11 @@ class _DDayCard extends StatelessWidget {
             width: compact ? 54 : 90,
             height: compact ? 54 : 90,
             decoration: BoxDecoration(
-              color: const Color(0xFF8272DE),
+              color: setting.cardColor.accent,
               borderRadius: BorderRadius.circular(compact ? 15 : 22),
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                  color: Color(0x337160CF),
+                  color: setting.cardColor.accent.withValues(alpha: 0.2),
                   blurRadius: 18,
                   offset: Offset(0, 8),
                 ),
@@ -325,33 +355,62 @@ class _DDayCard extends StatelessWidget {
       ),
     );
   }
+
+  String _formatDate(DateTime date) {
+    return '${date.year}.${date.month.toString().padLeft(2, '0')}.'
+        '${date.day.toString().padLeft(2, '0')}';
+  }
 }
 
 class _HomePanel extends StatelessWidget {
-  const _HomePanel({required this.child, this.gradient, this.compact = false});
+  const _HomePanel({
+    required this.child,
+    this.gradient,
+    this.compact = false,
+    this.onTap,
+  });
 
   final Widget child;
   final Gradient? gradient;
   final bool compact;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(compact ? 12 : 22),
-      decoration: BoxDecoration(
-        color: gradient == null ? Colors.white : null,
-        gradient: gradient,
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: const Color(0xFFF1F0F8)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0D5D4DB2),
-            blurRadius: 24,
-            offset: Offset(0, 8),
+    final decoration = BoxDecoration(
+      color: gradient == null ? Colors.white : null,
+      gradient: gradient,
+      borderRadius: BorderRadius.circular(26),
+      border: Border.all(color: const Color(0xFFF1F0F8)),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x0D5D4DB2),
+          blurRadius: 24,
+          offset: Offset(0, 8),
+        ),
+      ],
+    );
+    if (onTap == null) {
+      return Container(
+        padding: EdgeInsets.all(compact ? 12 : 22),
+        decoration: decoration,
+        child: child,
+      );
+    }
+    return Material(
+      color: Colors.transparent,
+      child: Ink(
+        decoration: decoration,
+        child: InkWell(
+          key: const Key('ddayHomeCard'),
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(26),
+          child: Padding(
+            padding: EdgeInsets.all(compact ? 12 : 22),
+            child: child,
           ),
-        ],
+        ),
       ),
-      child: child,
     );
   }
 }

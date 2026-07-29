@@ -21,6 +21,12 @@ enum DutyType {
     background: Color(0xFFFFF0DB),
     foreground: Color(0xFFE47012),
   ),
+  middle(
+    code: 'M',
+    label: '미들',
+    background: NurseMateColors.mintSoft,
+    foreground: Color(0xFF168A78),
+  ),
   off(
     code: 'OFF',
     label: '오프',

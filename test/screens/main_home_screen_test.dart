@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nursemate/models/duty_type.dart';
+import 'package:nursemate/models/dday_setting.dart';
 import 'package:nursemate/repositories/duty_repository.dart';
 import 'package:nursemate/screens/appearance_screen.dart';
 import 'package:nursemate/screens/main_menu_screen.dart';
+import 'package:nursemate/services/dday_settings_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   testWidgets('리뉴얼 홈의 주요 영역과 기존 기능 메뉴를 표시한다', (tester) async {
@@ -120,6 +123,55 @@ void main() {
     expect(navigationRect.height, 76);
     expect(navigationRect.bottom, closeTo(904, 0.1));
     expect(navigationRect.top, greaterThan(800));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('저장된 D-Day를 홈에 표시하고 설정 저장 후 즉시 갱신한다', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      ddayTitleKey: '입사 1주년',
+      ddayDateKey: DateTime(2025, 7, 11).toIso8601String(),
+      ddayCalculationModeKey: DDayCalculationMode.countdown.name,
+      ddayCardColorKey: DDayCardColor.orange.name,
+    });
+    final preferences = await SharedPreferences.getInstance();
+
+    await tester.binding.setSurfaceSize(const Size(490, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MainMenuScreen(
+          dutyRepository: _EmptyDutyRepository(),
+          dDaySettingsService: DDaySettingsService(preferences),
+          dDayToday: DateTime(2025, 7, 1),
+          initialDDaySetting: DDaySetting(
+            title: '입사 1주년',
+            date: DateTime(2025, 7, 11),
+            calculationMode: DDayCalculationMode.countdown,
+            cardColor: DDayCardColor.orange,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('D-10'), findsOneWidget);
+    expect(find.textContaining('입사 1주년'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('ddayHomeCard')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('ddayHomeCard')));
+    await tester.pumpAndSettle();
+    expect(find.text('D-Day 설정'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), '프리셉터 종료');
+    await tester.tap(find.byKey(const Key('ddayMode-countUp')));
+    await tester.tap(find.byKey(const Key('ddayColor-green')));
+    await tester.tap(find.byKey(const Key('ddaySaveButton')));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('프리셉터 종료'), findsOneWidget);
+    expect(find.text('D+10'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

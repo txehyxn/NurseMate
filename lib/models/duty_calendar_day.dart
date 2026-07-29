@@ -1,15 +1,18 @@
 import 'duty_type.dart';
+import 'duty_schedule.dart';
 
 class DutyCalendarDay {
   const DutyCalendarDay({
     required this.date,
     required this.isCurrentMonth,
     this.duty,
+    this.schedule = const DutyDaySchedule(),
   });
 
   final DateTime date;
   final bool isCurrentMonth;
   final DutyType? duty;
+  final DutyDaySchedule schedule;
 
   bool isSameDate(DateTime other) {
     return date.year == other.year &&
@@ -21,6 +24,7 @@ class DutyCalendarDay {
 List<DutyCalendarDay> buildDutyCalendarDays({
   required DateTime month,
   required Map<String, DutyType> duties,
+  Map<String, DutyDaySchedule> schedules = const {},
 }) {
   final normalizedMonth = DateTime(month.year, month.month);
   final leadingDays = normalizedMonth.weekday % DateTime.daysPerWeek;
@@ -39,6 +43,7 @@ List<DutyCalendarDay> buildDutyCalendarDays({
       date: date,
       isCurrentMonth: date.month == normalizedMonth.month,
       duty: duties[dutyDateKey(date)],
+      schedule: schedules[dutyDateKey(date)] ?? const DutyDaySchedule(),
     );
   });
 }

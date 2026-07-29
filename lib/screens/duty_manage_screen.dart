@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../design_system/nursemate_design_system.dart';
 import '../models/duty_calendar_day.dart';
+import '../models/duty_schedule.dart';
 import '../models/duty_type.dart';
 import '../repositories/duty_repository.dart';
+import '../services/duty_schedule_service.dart';
 import '../widgets/home/duty_calendar_card.dart';
+import 'duty_day_sheet.dart';
 
 class DutyManageScreen extends StatefulWidget {
   const DutyManageScreen({
@@ -12,11 +15,13 @@ class DutyManageScreen extends StatefulWidget {
     required this.repository,
     required this.initialMonth,
     this.today,
+    this.scheduleService,
   });
 
   final DutyRepository repository;
   final DateTime initialMonth;
   final DateTime? today;
+  final DutyScheduleService? scheduleService;
 
   @override
   State<DutyManageScreen> createState() => _DutyManageScreenState();
@@ -26,20 +31,26 @@ class _DutyManageScreenState extends State<DutyManageScreen> {
   late DateTime _month;
   DutyType _selectedType = DutyType.day;
   Map<String, DutyType> _duties = const {};
+  Map<String, DutyDaySchedule> _schedules = const {};
+  DutyScheduleService? _scheduleService;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _month = DateTime(widget.initialMonth.year, widget.initialMonth.month);
+    _scheduleService = widget.scheduleService;
     _loadMonth();
   }
 
   Future<void> _loadMonth() async {
+    _scheduleService ??= await DutyScheduleService.open();
     final duties = await widget.repository.getForMonth(_month);
+    final schedules = _scheduleService!.loadMonth(_month);
     if (!mounted) return;
     setState(() {
       _duties = duties;
+      _schedules = schedules;
       _isLoading = false;
     });
   }
@@ -52,15 +63,22 @@ class _DutyManageScreenState extends State<DutyManageScreen> {
     await _loadMonth();
   }
 
-  Future<void> _updateDuty(DateTime date) async {
+  Future<void> _editDay(DateTime date) async {
     if (date.year != _month.year || date.month != _month.month) return;
     final key = dutyDateKey(date);
-    final current = _duties[key];
-    if (current == _selectedType) {
+    final result = await showDutyDaySheet(
+      context: context,
+      date: date,
+      duty: _duties[key] ?? _selectedType,
+      schedule: _schedules[key] ?? const DutyDaySchedule(),
+    );
+    if (result == null) return;
+    if (result.duty == null) {
       await widget.repository.delete(date);
     } else {
-      await widget.repository.save(date, _selectedType);
+      await widget.repository.save(date, result.duty!);
     }
+    await _scheduleService!.save(date, result.schedule);
     await _loadMonth();
   }
 
@@ -88,12 +106,13 @@ class _DutyManageScreenState extends State<DutyManageScreen> {
                       DutyCalendarCard(
                         month: _month,
                         duties: _duties,
+                        schedules: _schedules,
                         today: widget.today,
                         onPreviousMonth: () => _moveMonth(-1),
                         onNextMonth: () => _moveMonth(1),
                         onManage: () {},
                         onSettings: _showSettingsMessage,
-                        onDateTap: _updateDuty,
+                        onDateTap: _editDay,
                         showManageButton: false,
                       ),
                       if (_isLoading)
