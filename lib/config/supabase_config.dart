@@ -4,6 +4,20 @@ abstract final class SupabaseConfig {
     'SUPABASE_PUBLISHABLE_KEY',
   );
 
-  static bool get isConfigured =>
-      url.trim().isNotEmpty && publishableKey.trim().isNotEmpty;
+  static bool get isConfigured {
+    final uri = Uri.tryParse(url.trim());
+    return isResolvedValue(url) &&
+        isResolvedValue(publishableKey) &&
+        uri != null &&
+        uri.scheme == 'https' &&
+        uri.host.isNotEmpty;
+  }
+
+  static bool isResolvedValue(String value) {
+    final normalized = value.trim();
+    return normalized.isNotEmpty &&
+        !normalized.startsWith(r'$') &&
+        !normalized.startsWith('%') &&
+        !normalized.contains('YOUR_');
+  }
 }
