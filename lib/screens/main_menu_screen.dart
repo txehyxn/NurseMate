@@ -21,9 +21,10 @@ import '../widgets/home/home_illustration.dart';
 import '../widgets/home/home_quick_sections.dart';
 import 'appearance_screen.dart';
 import 'coming_soon_screen.dart';
-import 'duty_manage_screen.dart';
-import 'duty_day_sheet.dart';
 import 'dday_setting_screen.dart';
+import 'disease_encyclopedia_screen.dart';
+import 'duty_day_sheet.dart';
+import 'duty_manage_screen.dart';
 import 'infusion_calculator_screen.dart';
 import 'infusion_speed_check_screen.dart';
 import 'memo_list_screen.dart';
@@ -45,6 +46,7 @@ class MainMenuScreen extends StatefulWidget {
     this.dDayToday,
     this.initialDDaySetting,
     this.dutyScheduleService,
+    this.diseaseWebViewClient,
   });
 
   final MemoRepository? memoRepository;
@@ -56,6 +58,7 @@ class MainMenuScreen extends StatefulWidget {
   final DateTime? dDayToday;
   final DDaySetting? initialDDaySetting;
   final DutyScheduleService? dutyScheduleService;
+  final DiseaseWebViewClient? diseaseWebViewClient;
 
   @override
   State<MainMenuScreen> createState() => _MainMenuScreenState();
@@ -264,6 +267,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                   const SizedBox(height: 18),
                   _FeatureGrid(
                     memoRepository: _memoRepository,
+                    diseaseWebViewClient: widget.diseaseWebViewClient,
                     onOpen: _open,
                     onComingSoon: _comingSoon,
                   ),
@@ -320,11 +324,13 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 class _FeatureGrid extends StatelessWidget {
   const _FeatureGrid({
     required this.memoRepository,
+    required this.diseaseWebViewClient,
     required this.onOpen,
     required this.onComingSoon,
   });
 
   final MemoRepository? memoRepository;
+  final DiseaseWebViewClient? diseaseWebViewClient;
   final ValueChanged<Widget> onOpen;
   final void Function(String, IconData) onComingSoon;
 
@@ -394,7 +400,9 @@ class _FeatureGrid extends StatelessWidget {
         description: '질환 정보와 간호 중재를\n한눈에 확인',
         background: const Color(0xFFFFF8EC),
         accent: const Color(0xFFF3A32F),
-        onTap: () => onComingSoon('질환별 검색', Icons.menu_book_outlined),
+        onTap: () => onOpen(
+          DiseaseEncyclopediaScreen(webViewClient: diseaseWebViewClient),
+        ),
       ),
       HomeFeatureCard(
         key: const Key('memoMenu'),
