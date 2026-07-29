@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../config/supabase_config.dart';
 import '../models/app_user.dart';
+import 'auth_session_service.dart';
 
 abstract interface class AuthService {
   AppUser? get currentUser;
@@ -11,7 +13,11 @@ abstract interface class AuthService {
 
   bool get isAvailable;
 
-  Future<void> signIn({required String email, required String password});
+  Future<void> signIn({
+    required String email,
+    required String password,
+    required bool rememberLogin,
+  });
 
   Future<bool> signUp({
     required String email,
@@ -19,13 +25,18 @@ abstract interface class AuthService {
     required String displayName,
   });
 
+  Future<void> sendPasswordResetEmail(String email);
+
+  Future<void> updatePassword(String password);
+
   Future<void> signOut();
 }
 
 class SupabaseAuthService implements AuthService {
-  SupabaseAuthService(this._client);
+  SupabaseAuthService(this._client, this._sessionService);
 
   final SupabaseClient _client;
+  final AuthSessionService _sessionService;
 
   @override
   bool get isAvailable => true;
@@ -39,11 +50,16 @@ class SupabaseAuthService implements AuthService {
   );
 
   @override
-  Future<void> signIn({required String email, required String password}) async {
+  Future<void> signIn({
+    required String email,
+    required String password,
+    required bool rememberLogin,
+  }) async {
     await _client.auth.signInWithPassword(
       email: email.trim(),
       password: password,
     );
+    await _sessionService.setRememberLogin(rememberLogin);
   }
 
   @override
@@ -61,7 +77,21 @@ class SupabaseAuthService implements AuthService {
   }
 
   @override
-  Future<void> signOut() => _client.auth.signOut();
+  Future<void> sendPasswordResetEmail(String email) =>
+      _client.auth.resetPasswordForEmail(
+        email.trim(),
+        redirectTo: SupabaseConfig.passwordResetRedirectUrl,
+      );
+
+  @override
+  Future<void> updatePassword(String password) =>
+      _client.auth.updateUser(UserAttributes(password: password));
+
+  @override
+  Future<void> signOut() async {
+    await _sessionService.setRememberLogin(false);
+    await _client.auth.signOut(scope: SignOutScope.local);
+  }
 
   AppUser? _mapUser(User? user) {
     if (user == null) return null;
@@ -87,7 +117,11 @@ class UnavailableAuthService implements AuthService {
   Stream<AppUser?> get userChanges => const Stream.empty();
 
   @override
-  Future<void> signIn({required String email, required String password}) {
+  Future<void> signIn({
+    required String email,
+    required String password,
+    required bool rememberLogin,
+  }) {
     throw StateError('클라우드 로그인이 아직 연결되지 않았습니다.');
   }
 
@@ -98,6 +132,16 @@ class UnavailableAuthService implements AuthService {
     required String displayName,
   }) {
     throw StateError('클라우드 회원가입이 아직 연결되지 않았습니다.');
+  }
+
+  @override
+  Future<void> sendPasswordResetEmail(String email) {
+    throw StateError('클라우드 비밀번호 재설정이 아직 연결되지 않았습니다.');
+  }
+
+  @override
+  Future<void> updatePassword(String password) {
+    throw StateError('클라우드 비밀번호 재설정이 아직 연결되지 않았습니다.');
   }
 
   @override

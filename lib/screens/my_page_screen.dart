@@ -5,6 +5,7 @@ import '../design_system/nursemate_components.dart';
 import '../design_system/nursemate_tokens.dart';
 import '../models/app_user.dart';
 import '../services/auth_service.dart';
+import 'password_reset_sheet.dart';
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({super.key, required this.authService});
@@ -25,6 +26,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
   bool _isSignUp = false;
   bool _isSubmitting = false;
   bool _obscurePassword = true;
+  bool _rememberLogin = false;
   String? _notice;
   AppUser? _user;
 
@@ -68,6 +70,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
         await widget.authService.signIn(
           email: _emailController.text,
           password: _passwordController.text,
+          rememberLogin: _rememberLogin,
         );
       }
       if (!mounted) return;
@@ -89,6 +92,12 @@ class _MyPageScreenState extends State<MyPageScreen> {
       if (mounted) setState(() => _isSubmitting = false);
     }
   }
+
+  Future<void> _showPasswordReset() => showPasswordResetSheet(
+    context: context,
+    authService: widget.authService,
+    initialEmail: _emailController.text,
+  );
 
   Future<void> _signOut() async {
     setState(() => _isSubmitting = true);
@@ -259,6 +268,53 @@ class _MyPageScreenState extends State<MyPageScreen> {
                   }
                   return null;
                 },
+              ),
+            ],
+            if (!_isSignUp) ...[
+              const SizedBox(height: NurseMateSpacing.xs),
+              Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      key: const Key('rememberLoginControl'),
+                      borderRadius: BorderRadius.circular(NurseMateRadii.small),
+                      onTap: _isSubmitting
+                          ? null
+                          : () => setState(
+                              () => _rememberLogin = !_rememberLogin,
+                            ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Checkbox(
+                              key: const Key('rememberLoginCheckbox'),
+                              value: _rememberLogin,
+                              onChanged: _isSubmitting
+                                  ? null
+                                  : (value) => setState(
+                                      () => _rememberLogin = value ?? false,
+                                    ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                              visualDensity: VisualDensity.compact,
+                            ),
+                            const Text('자동 로그인'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  TextButton(
+                    key: const Key('forgotPasswordButton'),
+                    onPressed: _isSubmitting || !widget.authService.isAvailable
+                        ? null
+                        : _showPasswordReset,
+                    child: const Text('비밀번호 찾기'),
+                  ),
+                ],
               ),
             ],
             if (!widget.authService.isAvailable) ...[

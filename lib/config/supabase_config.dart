@@ -3,6 +3,10 @@ abstract final class SupabaseConfig {
   static const publishableKey = String.fromEnvironment(
     'SUPABASE_PUBLISHABLE_KEY',
   );
+  static const passwordResetRedirectUrl = String.fromEnvironment(
+    'PASSWORD_RESET_REDIRECT_URL',
+    defaultValue: 'https://nursemate-seven.vercel.app/?password-recovery=true',
+  );
 
   static bool get isConfigured {
     final uri = Uri.tryParse(url.trim());

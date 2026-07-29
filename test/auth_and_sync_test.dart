@@ -11,6 +11,7 @@ import 'package:nursemate/repositories/duty_repository.dart';
 import 'package:nursemate/repositories/memo_repository.dart';
 import 'package:nursemate/screens/main_menu_screen.dart';
 import 'package:nursemate/screens/my_page_screen.dart';
+import 'package:nursemate/screens/password_update_screen.dart';
 import 'package:nursemate/services/auth_service.dart';
 
 void main() {
@@ -83,6 +84,92 @@ void main() {
     expect(find.byKey(const Key('signOutButton')), findsOneWidget);
   });
 
+  testWidgets('자동 로그인을 선택한 경우 로그인 옵션으로 전달한다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(600, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final auth = _FakeAuthService();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: NurseMateTheme.light(),
+        home: MyPageScreen(authService: auth),
+      ),
+    );
+
+    expect(
+      tester
+          .widget<Checkbox>(find.byKey(const Key('rememberLoginCheckbox')))
+          .value,
+      isFalse,
+    );
+    await tester.tap(find.byKey(const Key('rememberLoginControl')));
+    await tester.enterText(
+      find.byKey(const Key('authEmailField')),
+      'nurse@example.com',
+    );
+    await tester.enterText(
+      find.byKey(const Key('authPasswordField')),
+      'password123',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, '로그인'));
+    await tester.pumpAndSettle();
+
+    expect(auth.lastRememberLogin, isTrue);
+  });
+
+  testWidgets('비밀번호 찾기에서 재설정 메일을 요청한다', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(600, 1000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final auth = _FakeAuthService();
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: NurseMateTheme.light(),
+        home: MyPageScreen(authService: auth),
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('authEmailField')),
+      'nurse@example.com',
+    );
+    await tester.tap(find.byKey(const Key('forgotPasswordButton')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('sendPasswordResetButton')));
+    await tester.pumpAndSettle();
+
+    expect(auth.lastPasswordResetEmail, 'nurse@example.com');
+    expect(find.text('메일을 보냈어요'), findsOneWidget);
+  });
+
+  testWidgets('재설정 링크 화면에서 새 비밀번호를 변경하고 로그아웃한다', (tester) async {
+    final auth = _FakeAuthService()
+      .._user = const AppUser(id: 'user-1', email: 'nurse@example.com');
+    var completed = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: NurseMateTheme.light(),
+        home: PasswordUpdateScreen(
+          authService: auth,
+          onCompleted: () => completed = true,
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('newPasswordField')),
+      'newPassword123',
+    );
+    await tester.enterText(
+      find.byKey(const Key('newPasswordConfirmField')),
+      'newPassword123',
+    );
+    await tester.tap(find.byKey(const Key('updatePasswordButton')));
+    await tester.pumpAndSettle();
+
+    expect(auth.lastUpdatedPassword, 'newPassword123');
+    expect(auth.signOutCount, 1);
+    expect(completed, isTrue);
+  });
+
   test('재설치처럼 로컬 데이터가 비어 있어도 클라우드 메모를 복원한다', () async {
     final local = _MemoryMemoRepository();
     final cloudMemo = Memo(
@@ -107,6 +194,10 @@ class _FakeAuthService implements AuthService {
   final _controller = StreamController<AppUser?>.broadcast();
   AppUser? _user;
   int signUpCount = 0;
+  int signOutCount = 0;
+  bool? lastRememberLogin;
+  String? lastPasswordResetEmail;
+  String? lastUpdatedPassword;
 
   @override
   AppUser? get currentUser => _user;
@@ -118,7 +209,12 @@ class _FakeAuthService implements AuthService {
   Stream<AppUser?> get userChanges => _controller.stream;
 
   @override
-  Future<void> signIn({required String email, required String password}) async {
+  Future<void> signIn({
+    required String email,
+    required String password,
+    required bool rememberLogin,
+  }) async {
+    lastRememberLogin = rememberLogin;
     _user = AppUser(id: 'user-1', email: email);
     _controller.add(_user);
   }
@@ -136,9 +232,20 @@ class _FakeAuthService implements AuthService {
   }
 
   @override
+  Future<void> sendPasswordResetEmail(String email) async {
+    lastPasswordResetEmail = email;
+  }
+
+  @override
   Future<void> signOut() async {
+    signOutCount++;
     _user = null;
     _controller.add(null);
+  }
+
+  @override
+  Future<void> updatePassword(String password) async {
+    lastUpdatedPassword = password;
   }
 }
 

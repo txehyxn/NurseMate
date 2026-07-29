@@ -8,18 +8,25 @@ import 'design_system/nursemate_theme.dart';
 import 'models/app_user.dart';
 import 'screens/app_lock_screen.dart';
 import 'screens/main_menu_screen.dart';
+import 'screens/password_update_screen.dart';
+import 'services/auth_session_service.dart';
 import 'services/auth_service.dart';
 import 'services/cloud_service.dart';
 import 'services/theme_manager.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final preferences = await SharedPreferences.getInstance();
+  final isPasswordRecovery =
+      Uri.base.queryParameters['password-recovery'] == 'true';
   try {
-    await CloudService.initialize();
+    await CloudService.initialize(
+      sessionService: AuthSessionService(preferences),
+      preserveRecoverySession: isPasswordRecovery,
+    );
   } on Object {
     // Cloud configuration must never prevent offline access to NurseMate.
   }
-  final preferences = await SharedPreferences.getInstance();
   final isUnlocked = preferences.getBool(nurseMateUnlockedKey) ?? false;
   final themeManager = ThemeManager(preferences: preferences);
 
@@ -28,6 +35,8 @@ Future<void> main() async {
       initiallyUnlocked: isUnlocked,
       preferences: preferences,
       themeManager: themeManager,
+      initiallyResettingPassword:
+          isPasswordRecovery && CloudService.auth.currentUser != null,
     ),
   );
 }
@@ -38,12 +47,14 @@ class NurseMateApp extends StatefulWidget {
     this.initiallyUnlocked = false,
     this.preferences,
     this.themeManager,
+    this.initiallyResettingPassword = false,
   });
 
   /// 기존 화면을 독립적으로 검사할 때만 사용하는 초기 상태입니다.
   final bool initiallyUnlocked;
   final SharedPreferences? preferences;
   final ThemeManager? themeManager;
+  final bool initiallyResettingPassword;
 
   @override
   State<NurseMateApp> createState() => _NurseMateAppState();
@@ -56,11 +67,13 @@ class _NurseMateAppState extends State<NurseMateApp> {
   AppUser? _currentUser;
   late final ThemeManager _themeManager;
   late final bool _ownsThemeManager;
+  late bool _isResettingPassword;
 
   @override
   void initState() {
     super.initState();
     _isUnlocked = widget.initiallyUnlocked;
+    _isResettingPassword = widget.initiallyResettingPassword;
     _ownsThemeManager = widget.themeManager == null;
     _themeManager =
         widget.themeManager ?? ThemeManager(preferences: widget.preferences);
@@ -112,7 +125,12 @@ class _NurseMateAppState extends State<NurseMateApp> {
         themeMode: _themeManager.themeMode,
         themeAnimationDuration: const Duration(milliseconds: 250),
         themeAnimationCurve: Curves.easeOutCubic,
-        home: _isUnlocked
+        home: _isResettingPassword
+            ? PasswordUpdateScreen(
+                authService: _authService,
+                onCompleted: () => setState(() => _isResettingPassword = false),
+              )
+            : _isUnlocked
             ? MainMenuScreen(
                 key: ValueKey(_currentUser?.id ?? 'guest'),
                 authService: _authService,
