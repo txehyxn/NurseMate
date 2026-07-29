@@ -23,20 +23,24 @@ class ChecklistTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     return AnimatedContainer(
       duration: NurseMateMotion.fast,
       curve: NurseMateMotion.curve,
       decoration: BoxDecoration(
         color: isCompleted
-            ? NurseMateColors.primarySoft.withValues(alpha: 0.68)
-            : NurseMateColors.surface,
+            ? colors.primary.withValues(alpha: 0.14)
+            : colors.surface,
         borderRadius: BorderRadius.circular(NurseMateRadii.input),
         border: Border.all(
           color: isCompleted
               ? NurseMateColors.primary.withValues(alpha: 0.24)
-              : NurseMateColors.border,
+              : colors.outline,
         ),
-        boxShadow: NurseMateShadows.card,
+        boxShadow: theme.brightness == Brightness.dark
+            ? const <BoxShadow>[]
+            : NurseMateShadows.card,
       ),
       child: Material(
         color: Colors.transparent,
@@ -73,6 +77,8 @@ class ChecklistTile extends StatelessWidget {
                         style: TextStyle(
                           color: isCompleted
                               ? NurseMateColors.textTertiary
+                              : theme.brightness == Brightness.dark
+                              ? colors.onSurface
                               : NurseMateColors.navy,
                           fontSize: 16,
                           height: 1.35,
@@ -91,6 +97,8 @@ class ChecklistTile extends StatelessWidget {
                           style: TextStyle(
                             color: isCompleted
                                 ? NurseMateColors.textTertiary
+                                : theme.brightness == Brightness.dark
+                                ? colors.onSurfaceVariant
                                 : NurseMateColors.textSecondary,
                             fontSize: 13,
                             height: 1.35,
@@ -118,12 +126,12 @@ class ChecklistTile extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: isCompleted
                             ? NurseMateColors.primary
-                            : NurseMateColors.surface,
+                            : colors.surface,
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: isCompleted
                               ? NurseMateColors.primary
-                              : NurseMateColors.border,
+                              : colors.outline,
                           width: 1.6,
                         ),
                       ),

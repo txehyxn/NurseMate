@@ -99,10 +99,12 @@ class _DutyHeader extends StatelessWidget {
               size: 28,
             ),
             const SizedBox(width: 10),
-            const Text(
+            Text(
               '듀티표',
               style: TextStyle(
-                color: NurseMateColors.navy,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Theme.of(context).colorScheme.onSurface
+                    : NurseMateColors.navy,
                 fontSize: 22,
                 fontWeight: FontWeight.w900,
               ),
@@ -152,8 +154,10 @@ class _DutyHeader extends StatelessWidget {
               child: Text(
                 dutyMonthLabel(month),
                 key: ValueKey('${month.year}-${month.month}'),
-                style: const TextStyle(
-                  color: NurseMateColors.navy,
+                style: TextStyle(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Theme.of(context).colorScheme.onSurface
+                      : NurseMateColors.navy,
                   fontSize: 21,
                   fontWeight: FontWeight.w800,
                 ),
@@ -217,7 +221,9 @@ class _MonthButton extends StatelessWidget {
     return IconButton.filledTonal(
       onPressed: onPressed,
       style: IconButton.styleFrom(
-        backgroundColor: const Color(0xFFF7F5FF),
+        backgroundColor: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12)
+            : const Color(0xFFF7F5FF),
         foregroundColor: NurseMateColors.primary,
       ),
       icon: Icon(icon),
@@ -341,15 +347,25 @@ class DutyDayCell extends StatelessWidget {
         ? const Color(0xFFE14F6D)
         : weekday == 6
         ? const Color(0xFF2674C8)
+        : Theme.of(context).brightness == Brightness.dark
+        ? Theme.of(context).colorScheme.onSurface
         : NurseMateColors.navy;
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(vertical: dense ? 3 : 7, horizontal: 3),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(
-            top: BorderSide(color: NurseMateColors.divider),
-            right: BorderSide(color: Color(0xFFF4F3F8)),
+            top: BorderSide(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Theme.of(context).dividerColor
+                  : NurseMateColors.divider,
+            ),
+            right: BorderSide(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Theme.of(context).dividerColor
+                  : const Color(0xFFF4F3F8),
+            ),
           ),
         ),
         child: Column(
@@ -407,9 +423,7 @@ class DutyLegend extends StatelessWidget {
       alignment: WrapAlignment.spaceEvenly,
       spacing: 18,
       runSpacing: 12,
-      children: [
-        for (final type in DutyType.values) _LegendItem(type: type),
-      ],
+      children: [for (final type in DutyType.values) _LegendItem(type: type)],
     );
   }
 }
@@ -455,8 +469,10 @@ class _LegendItem extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           type.label,
-          style: const TextStyle(
-            color: NurseMateColors.textSecondary,
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Theme.of(context).colorScheme.onSurfaceVariant
+                : NurseMateColors.textSecondary,
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),

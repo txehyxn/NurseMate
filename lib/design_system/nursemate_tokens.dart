@@ -27,6 +27,15 @@ abstract final class NurseMateColors {
   static const divider = Color(0xFFF0EFF6);
   static const error = Color(0xFFD94A64);
   static const success = Color(0xFF2F9D70);
+
+  static const darkBackground = Color(0xFF11111A);
+  static const darkSurface = Color(0xFF1B1B28);
+  static const darkSurfaceMuted = Color(0xFF232334);
+  static const darkText = Color(0xFFE8E6F0);
+  static const darkTextSecondary = Color(0xFFB5B1C5);
+  static const darkTextTertiary = Color(0xFF898598);
+  static const darkBorder = Color(0xFF373449);
+  static const darkDivider = Color(0xFF2B293B);
 }
 
 abstract final class NurseMateSpacing {

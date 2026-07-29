@@ -27,8 +27,15 @@ class HomeFeatureCard extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 170;
+        final theme = Theme.of(context);
+        final cardBackground = theme.brightness == Brightness.dark
+            ? Color.alphaBlend(
+                accent.withValues(alpha: 0.10),
+                theme.colorScheme.surface,
+              )
+            : background;
         return Material(
-          color: background,
+          color: cardBackground,
           borderRadius: BorderRadius.circular(compact ? 20 : 26),
           child: InkWell(
             onTap: onTap,
@@ -84,7 +91,9 @@ class HomeFeatureCard extends StatelessWidget {
                       maxLines: compact ? 2 : 3,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: const Color(0xFF67697A),
+                        color: theme.brightness == Brightness.dark
+                            ? theme.colorScheme.onSurfaceVariant
+                            : const Color(0xFF67697A),
                         fontSize: compact ? 9.5 : 13,
                         height: compact ? 1.3 : 1.45,
                         fontWeight: FontWeight.w500,
@@ -185,7 +194,7 @@ class _FeatureIllustration extends StatelessWidget {
                 width: 34,
                 height: 34,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   shape: BoxShape.circle,
                   border: Border.all(color: accent.withValues(alpha: 0.18)),
                 ),

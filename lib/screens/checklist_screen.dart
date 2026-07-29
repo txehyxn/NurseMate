@@ -87,7 +87,7 @@ class _ChecklistScreenState extends State<ChecklistScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: NurseMateColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         leading: IconButton(
           key: Key('${widget.keyPrefix}BackButton'),
@@ -197,16 +197,18 @@ class _ChecklistBottomActions extends StatelessWidget {
         NurseMateSpacing.page,
         NurseMateSpacing.md,
       ),
-      decoration: const BoxDecoration(
-        color: NurseMateColors.surface,
-        border: Border(top: BorderSide(color: NurseMateColors.divider)),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x0F5D4DB2),
-            blurRadius: 18,
-            offset: Offset(0, -5),
-          ),
-        ],
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
+        boxShadow: Theme.of(context).brightness == Brightness.dark
+            ? const <BoxShadow>[]
+            : const [
+                BoxShadow(
+                  color: Color(0x0F5D4DB2),
+                  blurRadius: 18,
+                  offset: Offset(0, -5),
+                ),
+              ],
       ),
       child: Row(
         children: [

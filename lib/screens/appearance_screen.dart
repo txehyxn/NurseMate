@@ -169,7 +169,7 @@ class _AppearanceScreenState extends State<AppearanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: NurseMateColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       bottomNavigationBar: const _AppearanceBottomNavigation(),
       body: SafeArea(
         bottom: false,

@@ -12,6 +12,17 @@ void main() {
     expect(theme.inputDecorationTheme.enabledBorder, isA<OutlineInputBorder>());
   });
 
+  test('다크 Theme에 브랜드 컬러와 어두운 표면 토큰을 적용한다', () {
+    final theme = NurseMateTheme.dark();
+
+    expect(theme.useMaterial3, isTrue);
+    expect(theme.brightness, Brightness.dark);
+    expect(theme.scaffoldBackgroundColor, NurseMateColors.darkBackground);
+    expect(theme.colorScheme.surface, NurseMateColors.darkSurface);
+    expect(theme.colorScheme.outline, NurseMateColors.darkBorder);
+    expect(theme.colorScheme.primary, NurseMateColors.primary);
+  });
+
   testWidgets('공통 카드, 버튼, 입력창, 섹션 제목을 함께 사용할 수 있다', (tester) async {
     final controller = TextEditingController();
     addTearDown(controller.dispose);

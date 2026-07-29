@@ -24,10 +24,12 @@ class HomeBottomNavigation extends StatelessWidget {
         key: const Key('homeBottomNavigation'),
         height: 76,
         child: DecoratedBox(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            border: Border(top: BorderSide(color: Color(0xFFF0EFF6))),
-            boxShadow: [
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            border: Border(
+              top: BorderSide(color: Theme.of(context).dividerColor),
+            ),
+            boxShadow: const [
               BoxShadow(
                 color: Color(0x125D4DB2),
                 blurRadius: 22,
@@ -103,7 +105,12 @@ class _BottomItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? const Color(0xFF6554C0) : const Color(0xFF77788A);
+    final theme = Theme.of(context);
+    final color = selected
+        ? const Color(0xFF6554C0)
+        : theme.brightness == Brightness.dark
+        ? theme.colorScheme.onSurfaceVariant
+        : const Color(0xFF77788A);
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -111,7 +118,11 @@ class _BottomItem extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 5),
           decoration: BoxDecoration(
-            color: selected ? const Color(0xFFF2EFFF) : Colors.transparent,
+            color: selected
+                ? theme.brightness == Brightness.dark
+                      ? theme.colorScheme.primary.withValues(alpha: 0.14)
+                      : const Color(0xFFF2EFFF)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(18),
           ),
           child: Column(

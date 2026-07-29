@@ -10,6 +10,7 @@ import 'screens/app_lock_screen.dart';
 import 'screens/main_menu_screen.dart';
 import 'services/auth_service.dart';
 import 'services/cloud_service.dart';
+import 'services/theme_manager.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,8 +21,15 @@ Future<void> main() async {
   }
   final preferences = await SharedPreferences.getInstance();
   final isUnlocked = preferences.getBool(nurseMateUnlockedKey) ?? false;
+  final themeManager = ThemeManager(preferences: preferences);
 
-  runApp(NurseMateApp(initiallyUnlocked: isUnlocked, preferences: preferences));
+  runApp(
+    NurseMateApp(
+      initiallyUnlocked: isUnlocked,
+      preferences: preferences,
+      themeManager: themeManager,
+    ),
+  );
 }
 
 class NurseMateApp extends StatefulWidget {
@@ -29,11 +37,13 @@ class NurseMateApp extends StatefulWidget {
     super.key,
     this.initiallyUnlocked = false,
     this.preferences,
+    this.themeManager,
   });
 
   /// 기존 화면을 독립적으로 검사할 때만 사용하는 초기 상태입니다.
   final bool initiallyUnlocked;
   final SharedPreferences? preferences;
+  final ThemeManager? themeManager;
 
   @override
   State<NurseMateApp> createState() => _NurseMateAppState();
@@ -44,11 +54,16 @@ class _NurseMateAppState extends State<NurseMateApp> {
   late final AuthService _authService;
   StreamSubscription<AppUser?>? _authSubscription;
   AppUser? _currentUser;
+  late final ThemeManager _themeManager;
+  late final bool _ownsThemeManager;
 
   @override
   void initState() {
     super.initState();
     _isUnlocked = widget.initiallyUnlocked;
+    _ownsThemeManager = widget.themeManager == null;
+    _themeManager =
+        widget.themeManager ?? ThemeManager(preferences: widget.preferences);
     _authService = CloudService.auth;
     _currentUser = _authService.currentUser;
     _authSubscription = _authService.userChanges.listen(
@@ -65,6 +80,9 @@ class _NurseMateAppState extends State<NurseMateApp> {
   @override
   void dispose() {
     _authSubscription?.cancel();
+    if (_ownsThemeManager) {
+      _themeManager.dispose();
+    }
     super.dispose();
   }
 
@@ -84,16 +102,24 @@ class _NurseMateAppState extends State<NurseMateApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'NurseMate',
-      theme: NurseMateTheme.light(),
-      home: _isUnlocked
-          ? MainMenuScreen(
-              key: ValueKey(_currentUser?.id ?? 'guest'),
-              authService: _authService,
-            )
-          : AppLockScreen(onUnlocked: _unlock),
+    return AnimatedBuilder(
+      animation: _themeManager,
+      builder: (context, _) => MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'NurseMate',
+        theme: NurseMateTheme.light(),
+        darkTheme: NurseMateTheme.dark(),
+        themeMode: _themeManager.themeMode,
+        themeAnimationDuration: const Duration(milliseconds: 250),
+        themeAnimationCurve: Curves.easeOutCubic,
+        home: _isUnlocked
+            ? MainMenuScreen(
+                key: ValueKey(_currentUser?.id ?? 'guest'),
+                authService: _authService,
+                themeManager: _themeManager,
+              )
+            : AppLockScreen(onUnlocked: _unlock),
+      ),
     );
   }
 }

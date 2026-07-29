@@ -7,10 +7,14 @@ class HomeHeader extends StatelessWidget {
     super.key,
     required this.onNotifications,
     required this.onProfile,
+    this.onThemeToggle,
+    this.isDarkMode = false,
   });
 
   final VoidCallback onNotifications;
   final VoidCallback onProfile;
+  final VoidCallback? onThemeToggle;
+  final bool isDarkMode;
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +48,30 @@ class HomeHeader extends StatelessWidget {
             ],
           ),
         ),
+        if (onThemeToggle != null)
+          IconButton(
+            key: const Key('themeToggleButton'),
+            tooltip: isDarkMode ? '라이트 모드' : '다크 모드',
+            onPressed: onThemeToggle,
+            iconSize: 26,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            icon: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeOutCubic,
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: RotationTransition(
+                  turns: Tween<double>(begin: 0.8, end: 1).animate(animation),
+                  child: child,
+                ),
+              ),
+              child: Icon(
+                isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                key: ValueKey(isDarkMode),
+              ),
+            ),
+          ),
         Stack(
           clipBehavior: Clip.none,
           children: [
@@ -51,7 +79,9 @@ class HomeHeader extends StatelessWidget {
               tooltip: '알림',
               onPressed: onNotifications,
               iconSize: 29,
-              color: const Color(0xFF4E5063),
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Theme.of(context).colorScheme.onSurfaceVariant
+                  : const Color(0xFF4E5063),
               icon: const Icon(Icons.notifications_none_rounded),
             ),
             const Positioned(
@@ -78,7 +108,10 @@ class HomeHeader extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFFF1EEFF),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.surface,
+                width: 3,
+              ),
               boxShadow: const [
                 BoxShadow(
                   color: Color(0x145D4DB2),

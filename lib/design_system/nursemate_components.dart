@@ -7,24 +7,27 @@ class NurseMateCard extends StatelessWidget {
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(NurseMateSpacing.xl),
-    this.backgroundColor = NurseMateColors.surface,
+    this.backgroundColor,
     this.radius = NurseMateRadii.card,
     this.onTap,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
-  final Color backgroundColor;
+  final Color? backgroundColor;
   final double radius;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final decoration = BoxDecoration(
-      color: backgroundColor,
+      color: backgroundColor ?? colors.surface,
       borderRadius: BorderRadius.circular(radius),
-      border: Border.all(color: NurseMateColors.border),
-      boxShadow: NurseMateShadows.card,
+      border: Border.all(color: colors.outline),
+      boxShadow: Theme.of(context).brightness == Brightness.dark
+          ? const <BoxShadow>[]
+          : NurseMateShadows.card,
     );
     if (onTap == null) {
       return Container(padding: padding, decoration: decoration, child: child);
@@ -142,8 +145,10 @@ class NurseMateTextField extends StatelessWidget {
       keyboardType: keyboardType,
       maxLines: maxLines,
       onChanged: onChanged,
-      style: const TextStyle(
-        color: NurseMateColors.navy,
+      style: TextStyle(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Theme.of(context).colorScheme.onSurface
+            : NurseMateColors.navy,
         fontSize: 16,
         fontWeight: FontWeight.w600,
       ),

@@ -161,7 +161,7 @@ class _DDaySettingScreenState extends State<DDaySettingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: NurseMateColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         centerTitle: true,
         leading: IconButton(

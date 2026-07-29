@@ -13,6 +13,7 @@ import '../services/cloud_service.dart';
 import '../services/dday_settings_service.dart';
 import '../services/duty_schedule_service.dart';
 import '../services/repository_service.dart';
+import '../services/theme_manager.dart';
 import '../widgets/home/duty_calendar_card.dart';
 import '../widgets/home/home_bottom_navigation.dart';
 import '../widgets/home/home_feature_card.dart';
@@ -37,8 +38,7 @@ final Uri kAsanDiseaseEncyclopediaUri = Uri.parse(
   'https://www.amc.seoul.kr/asan/main.do',
 );
 
-typedef ExternalUrlLauncher =
-    Future<bool> Function(Uri uri, LaunchMode mode);
+typedef ExternalUrlLauncher = Future<bool> Function(Uri uri, LaunchMode mode);
 
 class MainMenuScreen extends StatefulWidget {
   const MainMenuScreen({
@@ -53,6 +53,7 @@ class MainMenuScreen extends StatefulWidget {
     this.initialDDaySetting,
     this.dutyScheduleService,
     this.diseaseUrlLauncher,
+    this.themeManager,
   });
 
   final MemoRepository? memoRepository;
@@ -65,6 +66,7 @@ class MainMenuScreen extends StatefulWidget {
   final DDaySetting? initialDDaySetting;
   final DutyScheduleService? dutyScheduleService;
   final ExternalUrlLauncher? diseaseUrlLauncher;
+  final ThemeManager? themeManager;
 
   @override
   State<MainMenuScreen> createState() => _MainMenuScreenState();
@@ -225,8 +227,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
   Future<void> _openDiseaseEncyclopedia() async {
     final launcher =
-        widget.diseaseUrlLauncher ??
-        (uri, mode) => launchUrl(uri, mode: mode);
+        widget.diseaseUrlLauncher ?? (uri, mode) => launchUrl(uri, mode: mode);
     if (!await launcher(
           kAsanDiseaseEncyclopediaUri,
           LaunchMode.externalApplication,
@@ -240,8 +241,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: const Color(0xFFFBFAFE),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       bottomNavigationBar: HomeBottomNavigation(
         onHome: () {},
         onCalculation: () => _open(const InfusionCalculatorScreen()),
@@ -262,6 +264,12 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: HomeHeader(
+                      isDarkMode: isDarkMode,
+                      onThemeToggle: widget.themeManager == null
+                          ? null
+                          : () => widget.themeManager!.toggle(
+                              Theme.of(context).brightness,
+                            ),
                       onNotifications: () =>
                           _comingSoon('알림', Icons.notifications_none_rounded),
                       onProfile: _openProfile,
@@ -469,8 +477,10 @@ class _SectionHeading extends StatelessWidget {
         const SizedBox(width: 9),
         Text(
           title,
-          style: const TextStyle(
-            color: Color(0xFF242539),
+          style: TextStyle(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Theme.of(context).colorScheme.onSurface
+                : const Color(0xFF242539),
             fontSize: 23,
             fontWeight: FontWeight.w900,
             letterSpacing: -0.6,

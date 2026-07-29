@@ -126,6 +126,7 @@ class _QuickCalculationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return _HomePanel(
       compact: compact,
       child: Column(
@@ -135,24 +136,30 @@ class _QuickCalculationCard extends StatelessWidget {
             children: [
               Icon(
                 Icons.calculate_outlined,
-                color: Color(0xFF62647A),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? colors.onSurfaceVariant
+                    : const Color(0xFF62647A),
                 size: compact ? 18 : 23,
               ),
               SizedBox(width: compact ? 5 : 9),
               Text(
                 '빠른 계산',
                 style: TextStyle(
-                  color: Color(0xFF303145),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? colors.onSurface
+                      : const Color(0xFF303145),
                   fontSize: compact ? 14 : 18,
                   fontWeight: FontWeight.w800,
                 ),
               ),
               const Spacer(),
               if (!compact)
-                const Text(
+                Text(
                   '더보기  ›',
                   style: TextStyle(
-                    color: Color(0xFF898A9B),
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? colors.onSurfaceVariant
+                        : const Color(0xFF898A9B),
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                   ),
@@ -225,6 +232,7 @@ class _QuickItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -243,7 +251,9 @@ class _QuickItem extends StatelessWidget {
               textAlign: TextAlign.center,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: const Color(0xFF3E4055),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? colors.onSurface
+                    : const Color(0xFF3E4055),
                 fontSize: compact ? 9 : 12,
                 fontWeight: FontWeight.w800,
               ),
@@ -252,7 +262,9 @@ class _QuickItem extends StatelessWidget {
             Text(
               caption,
               style: TextStyle(
-                color: const Color(0xFF9A9BAC),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? colors.onSurfaceVariant
+                    : const Color(0xFF9A9BAC),
                 fontSize: compact ? 8 : 10,
                 fontWeight: FontWeight.w600,
               ),
@@ -377,18 +389,25 @@ class _HomePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final decoration = BoxDecoration(
-      color: gradient == null ? Colors.white : null,
+      color: gradient == null ? theme.colorScheme.surface : null,
       gradient: gradient,
       borderRadius: BorderRadius.circular(26),
-      border: Border.all(color: const Color(0xFFF1F0F8)),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x0D5D4DB2),
-          blurRadius: 24,
-          offset: Offset(0, 8),
-        ),
-      ],
+      border: Border.all(
+        color: theme.brightness == Brightness.dark
+            ? theme.colorScheme.outline
+            : const Color(0xFFF1F0F8),
+      ),
+      boxShadow: theme.brightness == Brightness.dark
+          ? const <BoxShadow>[]
+          : const [
+              BoxShadow(
+                color: Color(0x0D5D4DB2),
+                blurRadius: 24,
+                offset: Offset(0, 8),
+              ),
+            ],
     );
     if (onTap == null) {
       return Container(
