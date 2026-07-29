@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nursemate/design_system/nursemate_theme.dart';
+import 'package:nursemate/models/intake_calculator_model.dart';
 import 'package:nursemate/screens/intake_calculator_screen.dart';
 
 void main() {
@@ -22,7 +23,20 @@ void main() {
     expect(find.text('국'), findsNWidgets(2));
     expect(find.text('채소반찬'), findsNWidgets(2));
     expect(find.text('육류·생선반찬'), findsNWidgets(2));
+    expect(find.text('300g · 계산기준 200cc'), findsOneWidget);
+    expect(find.text('계산기준 200cc'), findsOneWidget);
+    expect(find.text('계산기준 50cc'), findsOneWidget);
+    expect(find.text('계산기준 40cc'), findsOneWidget);
     expect(find.byType(ChoiceChip), findsNWidgets(44));
+    for (final percentage in IntakeCalculatorModel.percentages) {
+      expect(
+        find.descendant(
+          of: find.byKey(Key('intakeChip-main-$percentage')),
+          matching: find.text('$percentage%'),
+        ),
+        findsOneWidget,
+      );
+    }
     expect(_totalLabel(tester), '0 cc');
     expect(_itemAmount(tester, 'main'), '0cc');
     expect(_itemAmount(tester, 'soup'), '0cc');
@@ -100,11 +114,13 @@ void main() {
     await tester.tap(find.byKey(const Key('mealType-porridge')));
     await tester.pumpAndSettle();
     expect(find.text('죽'), findsNWidgets(3));
+    expect(find.text('300g · 계산기준 250cc'), findsOneWidget);
     expect(_totalLabel(tester), '250 cc');
 
     await tester.tap(find.byKey(const Key('mealType-thinPorridge')));
     await tester.pumpAndSettle();
     expect(find.text('미음'), findsNWidgets(3));
+    expect(find.text('200cc · 계산기준 200cc'), findsOneWidget);
     expect(_totalLabel(tester), '200 cc');
     expect(tester.takeException(), isNull);
   });

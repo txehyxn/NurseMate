@@ -33,7 +33,15 @@ void main() {
       (thinPorridge.first.name, thinPorridge.first.standardVolumeCc),
       ('미음', 200),
     );
+    expect(regular.first.referenceLabel, '300g · 계산기준 200cc');
+    expect(porridge.first.referenceLabel, '300g · 계산기준 250cc');
+    expect(thinPorridge.first.referenceLabel, '200cc · 계산기준 200cc');
     expect(regular.skip(1).map((item) => item.standardVolumeCc), [200, 50, 40]);
+    expect(regular.skip(1).map((item) => item.referenceLabel), [
+      '계산기준 200cc',
+      '계산기준 50cc',
+      '계산기준 40cc',
+    ]);
     expect(porridge.skip(1).map((item) => item.standardVolumeCc), [
       200,
       50,

@@ -249,9 +249,23 @@ class _FoodPercentageCard extends StatelessWidget {
               ),
               const SizedBox(width: NurseMateSpacing.sm),
               Expanded(
-                child: Text(
-                  item.name,
-                  style: Theme.of(context).textTheme.titleMedium,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.name,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: NurseMateSpacing.xxs),
+                    Text(
+                      item.referenceLabel,
+                      key: Key('intakeReference-${item.id}'),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Text(
@@ -277,7 +291,7 @@ class _FoodPercentageCard extends StatelessWidget {
                   curve: NurseMateMotion.curve,
                   child: ChoiceChip(
                     key: Key('intakeChip-${item.id}-$percentage'),
-                    label: Text('$percentage'),
+                    label: Text('$percentage%'),
                     selected: selectedPercentage == percentage,
                     showCheckmark: false,
                     onSelected: (_) => onSelected(percentage),

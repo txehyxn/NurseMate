@@ -15,12 +15,14 @@ class IntakeFoodItem {
     required this.name,
     required this.emoji,
     required this.standardVolumeCc,
+    required this.referenceLabel,
   });
 
   final String id;
   final String name;
   final String emoji;
   final int standardVolumeCc;
+  final String referenceLabel;
 }
 
 abstract final class IntakeCalculatorModel {
@@ -33,18 +35,21 @@ abstract final class IntakeCalculatorModel {
         name: '밥',
         emoji: '🍚',
         standardVolumeCc: 200,
+        referenceLabel: '300g · 계산기준 200cc',
       ),
       MealType.porridge => const IntakeFoodItem(
         id: 'main',
         name: '죽',
         emoji: '🥣',
         standardVolumeCc: 250,
+        referenceLabel: '300g · 계산기준 250cc',
       ),
       MealType.thinPorridge => const IntakeFoodItem(
         id: 'main',
         name: '미음',
         emoji: '🥣',
         standardVolumeCc: 200,
+        referenceLabel: '200cc · 계산기준 200cc',
       ),
     },
     const IntakeFoodItem(
@@ -52,18 +57,21 @@ abstract final class IntakeCalculatorModel {
       name: '국',
       emoji: '🍲',
       standardVolumeCc: 200,
+      referenceLabel: '계산기준 200cc',
     ),
     const IntakeFoodItem(
       id: 'vegetable',
       name: '채소반찬',
       emoji: '🥬',
       standardVolumeCc: 50,
+      referenceLabel: '계산기준 50cc',
     ),
     const IntakeFoodItem(
       id: 'protein',
       name: '육류·생선반찬',
       emoji: '🥩',
       standardVolumeCc: 40,
+      referenceLabel: '계산기준 40cc',
     ),
   ];
 
