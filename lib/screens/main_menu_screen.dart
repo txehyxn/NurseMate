@@ -20,6 +20,7 @@ import '../widgets/home/home_header.dart';
 import '../widgets/home/home_illustration.dart';
 import '../widgets/home/home_quick_sections.dart';
 import 'appearance_screen.dart';
+import 'checklist_home_screen.dart';
 import 'coming_soon_screen.dart';
 import 'dday_setting_screen.dart';
 import 'duty_day_sheet.dart';
@@ -387,8 +388,7 @@ class _FeatureGrid extends StatelessWidget {
         description: '듀티에 맞는 중요한\n업무를 챙겨보세요',
         background: const Color(0xFFF7F3FF),
         accent: const Color(0xFF7952CE),
-        onTap: () =>
-            onComingSoon('듀티별 체크리스트', Icons.assignment_turned_in_outlined),
+        onTap: () => onOpen(const ChecklistHomeScreen()),
       ),
       Link(
         uri: kKpicDrugSearchUri,
